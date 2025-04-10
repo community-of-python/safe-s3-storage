@@ -27,7 +27,7 @@ class ImageConversionFormat(enum.Enum):
     webp = ("image/webp", "webp")
 
 
-def split_file_base_name_and_extensions(file_name: str) -> tuple[str, str | None]:
+def _split_file_base_name_and_extensions(file_name: str) -> tuple[str, str | None]:
     split_result: typing.Final = file_name.rsplit(".", 1) or [file_name]
     return split_result[0], None if len(split_result) == 1 else split_result[1]
 
@@ -82,7 +82,7 @@ class FileValidator:
                 file_name=validated_file.file_name, mime_type=validated_file.mime_type
             ) from pyvips_error
 
-        file_base_name, _file_extension = split_file_base_name_and_extensions(validated_file.file_name)
+        file_base_name, _file_extension = _split_file_base_name_and_extensions(validated_file.file_name)
         return ValidatedFile(
             file_name=f"{file_base_name}.{self.image_conversion_format.value[1]}",
             file_content=new_file_content,
