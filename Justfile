@@ -11,8 +11,8 @@ lint:
     uv run --group lint mypy .
 
 lint-ci:
-    uv run --group lint ruff format --check
     uv run --group lint auto-typing-final .
+    uv run --group lint ruff format --check
     uv run --group lint ruff check --no-fix
     uv run --group lint mypy .
 

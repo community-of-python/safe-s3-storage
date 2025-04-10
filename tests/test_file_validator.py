@@ -1,4 +1,5 @@
 import random
+import typing
 
 import faker
 import httpx
@@ -40,13 +41,13 @@ def png_file() -> bytes:
 
 def get_mocked_kaspersky_scan_engine_client(*, ok_response: bool) -> KasperskyScanEngineClient:
     if ok_response:
-        all_scan_results = list(KasperskyScanEngineScanResult)
+        all_scan_results: typing.Final = list(KasperskyScanEngineScanResult)
         all_scan_results.remove(KasperskyScanEngineScanResult.DETECT)
         scan_result = random.choice(all_scan_results)
     else:
         scan_result = KasperskyScanEngineScanResult.DETECT
 
-    scan_response = KasperskyScanEngineResponse(scanResult=scan_result)
+    scan_response: typing.Final = KasperskyScanEngineResponse(scanResult=scan_result)
     return KasperskyScanEngineClient(
         httpx_client=httpx.AsyncClient(
             transport=httpx.MockTransport(lambda _: httpx.Response(200, json=scan_response.model_dump(mode="json")))
@@ -83,9 +84,9 @@ class TestFileValidator:
     async def test_ok_image(
         self, faker: faker.Faker, png_file: bytes, image_conversion_mime_type: ImageConversionMimeType
     ) -> None:
-        file_name = faker.file_name()
+        file_name: typing.Final = faker.file_name()
 
-        validated_file = await FileValidator(
+        validated_file: typing.Final = await FileValidator(
             allowed_mime_types=["image/png"], image_conversion_mime_type=image_conversion_mime_type
         ).validate_file(file_name=file_name, file_content=png_file)
 
@@ -95,10 +96,10 @@ class TestFileValidator:
         assert validated_file.mime_type == image_conversion_mime_type
 
     async def test_ok_not_image(self, faker: faker.Faker) -> None:
-        file_name = faker.file_name()
-        file_content = generate_binary_content(faker)
+        file_name: typing.Final = faker.file_name()
+        file_content: typing.Final = generate_binary_content(faker)
 
-        validated_file = await FileValidator(allowed_mime_types=[MIME_OCTET_STREAM]).validate_file(
+        validated_file: typing.Final = await FileValidator(allowed_mime_types=[MIME_OCTET_STREAM]).validate_file(
             file_name=file_name, file_content=file_content
         )
 

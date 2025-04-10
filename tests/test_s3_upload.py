@@ -1,3 +1,4 @@
+import typing
 from unittest import mock
 
 import faker
@@ -9,12 +10,12 @@ from tests.conftest import MIME_OCTET_STREAM, generate_binary_content
 
 class TestS3Upload:
     async def test_ok_with_defaults(self, faker: faker.Faker) -> None:
-        s3_client_mock = mock.AsyncMock()
-        file_name = faker.file_name()
-        bucket_name = faker.pystr()
-        file_content = generate_binary_content(faker)
+        s3_client_mock: typing.Final = mock.AsyncMock()
+        file_name: typing.Final = faker.file_name()
+        bucket_name: typing.Final = faker.pystr()
+        file_content: typing.Final = generate_binary_content(faker)
 
-        uploaded_file = await S3FilesUploader(
+        uploaded_file: typing.Final = await S3FilesUploader(
             file_validator=FileValidator(allowed_mime_types=[MIME_OCTET_STREAM]),
             s3_client=s3_client_mock,
             s3_bucket_name=bucket_name,
@@ -36,12 +37,12 @@ class TestS3Upload:
         )
 
     async def test_ok_with_custom_key_generator(self, faker: faker.Faker) -> None:
-        s3_client_mock = mock.AsyncMock()
-        file_name = faker.file_name()
-        file_name_prefix = faker.pystr()
-        bucket_name = faker.pystr()
+        s3_client_mock: typing.Final = mock.AsyncMock()
+        file_name: typing.Final = faker.file_name()
+        file_name_prefix: typing.Final = faker.pystr()
+        bucket_name: typing.Final = faker.pystr()
 
-        uploaded_file = await S3FilesUploader(
+        uploaded_file: typing.Final = await S3FilesUploader(
             file_validator=FileValidator(allowed_mime_types=[MIME_OCTET_STREAM]),
             s3_client=s3_client_mock,
             s3_bucket_name=bucket_name,
@@ -52,9 +53,9 @@ class TestS3Upload:
         assert s3_client_mock.put_object.mock_calls[0].kwargs["Key"] == file_name_prefix + file_name
 
     async def test_ok_with_custom_metadata_generator(self, faker: faker.Faker) -> None:
-        s3_client_mock = mock.AsyncMock()
-        file_name = faker.file_name()
-        file_original_name_key = faker.pystr()
+        s3_client_mock: typing.Final = mock.AsyncMock()
+        file_name: typing.Final = faker.file_name()
+        file_original_name_key: typing.Final = faker.pystr()
 
         await S3FilesUploader(
             file_validator=FileValidator(allowed_mime_types=[MIME_OCTET_STREAM]),

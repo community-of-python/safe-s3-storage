@@ -32,8 +32,10 @@ class S3FilesUploader(BaseS3CRUD):
     s3_metadata_generator: typing.Callable[[ValidatedFile], typing.Mapping[str, str]] = lambda _file_context: {}
 
     async def upload_file(self, *, file_name: str, file_content: bytes) -> UploadedFile:
-        validated_file = await self.file_validator.validate_file(file_name=file_name, file_content=file_content)
-        s3_key = self.s3_key_generator(validated_file)
+        validated_file: typing.Final = await self.file_validator.validate_file(
+            file_name=file_name, file_content=file_content
+        )
+        s3_key: typing.Final = self.s3_key_generator(validated_file)
 
         await stamina.retry(on=botocore.exceptions.BotoCoreError, attempts=self.s3_retries)(self.s3_client.put_object)(
             Body=validated_file.file_content,

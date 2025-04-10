@@ -66,7 +66,7 @@ class FileValidator:
 
         try:
             pyvips_image: typing.Final[pyvips.Image] = pyvips.Image.new_from_buffer(file_content, options="")
-            new_file_content = typing.cast(
+            new_file_content: typing.Final = typing.cast(
                 "bytes",
                 pyvips_image.write_to_buffer(
                     _IMAGE_CONVERSION_FORMAT_TO_PYVIPS_EXTENSION[self.image_conversion_mime_type], Q=self.image_quality

@@ -38,17 +38,17 @@ class KasperskyScanEngineClient:
     kaspersky_scan_engine_retries: int = 3
 
     async def _send_scan_memory_request(self, payload: dict[str, typing.Any]) -> bytes:
-        response = await self.httpx_client.post(url=self.kaspersky_scan_engine_url, json=payload)
+        response: typing.Final = await self.httpx_client.post(url=self.kaspersky_scan_engine_url, json=payload)
         response.raise_for_status()
         return response.content
 
     async def scan_memory(self, file_content: bytes) -> None:
-        payload = KasperskyScanEngineRequest(
+        payload: typing.Final = KasperskyScanEngineRequest(
             timeout=str(self.kaspersky_scan_engine_timeout_ms), object=base64.b64encode(file_content).decode()
         ).model_dump(mode="json")
         response: typing.Final = await stamina.retry(on=httpx.HTTPError, attempts=self.kaspersky_scan_engine_retries)(
             self._send_scan_memory_request
         )(payload)
-        validated_response = KasperskyScanEngineResponse.model_validate_json(response)
+        validated_response: typing.Final = KasperskyScanEngineResponse.model_validate_json(response)
         if validated_response.scanResult == KasperskyScanEngineScanResult.DETECT:
             raise ThreatDetectedError(antivirus_response=response)
