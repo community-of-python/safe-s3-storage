@@ -32,24 +32,26 @@ class ThreatDetectedError(Exception):
     response: bytes
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True, frozen=True, slots=True)
 class KasperskyScanEngineClient:
-    kaspersky_scan_engine_base_url: str
-    kaspersky_scan_engine_timeout: int
     http_client: httpx.AsyncClient
 
-    @stamina.retry(on=httpx.HTTPError, attempts=3)
-    async def _send_request(self, payload: dict[str, typing.Any]) -> bytes:
+    kaspersky_scan_engine_base_url: str
+    kaspersky_scan_engine_timeout: int
+    kaspersky_scan_engine_retries: int = 3
+
+    async def _send_scan_memory_request(self, payload: dict[str, typing.Any]) -> bytes:
         response = await self.http_client.post(url=self.kaspersky_scan_engine_base_url, json=payload)
         response.raise_for_status()
         return response.content
 
     async def scan_memory(self, file_content: bytes) -> None:
-        response: typing.Final = await self._send_request(
-            KasperskyScanEngineRequest(
-                timeout=str(self.kaspersky_scan_engine_timeout), object=base64.b64encode(file_content).decode()
-            ).model_dump(mode="json")
-        )
+        payload = KasperskyScanEngineRequest(
+            timeout=str(self.kaspersky_scan_engine_timeout), object=base64.b64encode(file_content).decode()
+        ).model_dump(mode="json")
+        response: typing.Final = await stamina.retry(on=httpx.HTTPError, attempts=self.kaspersky_scan_engine_retries)(
+            self._send_scan_memory_request
+        )(payload)
         validated_response = KasperskyScanEngineResponse.model_validate_json(response)
         if validated_response.scan_result == KasperskyScanEngineScanResult.DETECT:
             raise ThreatDetectedError(response=response)
