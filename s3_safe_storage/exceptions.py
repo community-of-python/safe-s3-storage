@@ -24,9 +24,3 @@ class TooLargeFileError(Exception):
 class FailedToConvertImageError(Exception):
     file_name: str
     mime_type: str
-@dataclasses.dataclass
-class InvalidFilePathError(Exception):
-    file_path: str
-@dataclasses.dataclass
-class S3FileNotFoundError(Exception):
-    file_path: str
