@@ -2,7 +2,7 @@ import dataclasses
 import enum
 import typing
 
-import magic
+import puremagic
 import pyvips  # type: ignore[import-untyped]
 
 from safe_s3_storage.exceptions import FailedToConvertImageError, TooLargeFileError, UnsupportedMimeTypeError
@@ -48,7 +48,7 @@ class FileValidator:
     image_quality: int = 85
 
     def _validate_mime_type(self, *, file_name: str, file_content: bytes) -> str:
-        if (mime_type := magic.from_buffer(file_content, mime=True)) in self.allowed_mime_types:
+        if (mime_type := puremagic.from_string(file_content, mime=True)) in self.allowed_mime_types:
             return mime_type
         raise UnsupportedMimeTypeError(
             file_name=file_name, mime_type=mime_type, allowed_mime_types=self.allowed_mime_types
