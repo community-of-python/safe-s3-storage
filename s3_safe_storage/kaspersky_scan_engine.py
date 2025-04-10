@@ -33,7 +33,7 @@ class KasperskyScanEngineResponse(pydantic.BaseModel):
 class KasperskyScanEngineClient:
     httpx_client: httpx.AsyncClient
 
-    kaspersky_scan_engine_url: str = "http://127.0.0.1:9998/api/v3.0/scanmemory"
+    kaspersky_scan_engine_url: str
     kaspersky_scan_engine_timeout_ms: int = 10000
     kaspersky_scan_engine_retries: int = 3
 
