@@ -26,7 +26,7 @@ class KasperskyScanEngineScanResult(enum.StrEnum):
 
 
 class KasperskyScanEngineResponse(pydantic.BaseModel):
-    scan_result: typing.Annotated[KasperskyScanEngineScanResult, pydantic.Field(alias="scanResult")]
+    scanResult: KasperskyScanEngineScanResult  # noqa: N815
 
 
 @dataclasses.dataclass(kw_only=True, frozen=True, slots=True)
@@ -50,5 +50,5 @@ class KasperskyScanEngineClient:
             self._send_scan_memory_request
         )(payload)
         validated_response = KasperskyScanEngineResponse.model_validate_json(response)
-        if validated_response.scan_result == KasperskyScanEngineScanResult.DETECT:
+        if validated_response.scanResult == KasperskyScanEngineScanResult.DETECT:
             raise ThreatDetectedError(antivirus_response=response)

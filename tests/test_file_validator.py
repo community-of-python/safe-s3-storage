@@ -52,7 +52,7 @@ def get_mocked_kaspersky_scan_engine_client(*, ok_response: bool) -> KasperskySc
     scan_response = KasperskyScanEngineResponse(scanResult=scan_result)
     return KasperskyScanEngineClient(
         httpx_client=httpx.AsyncClient(
-            transport=httpx.MockTransport(lambda: httpx.Response(200, json=scan_response.model_dump(mode="json")))
+            transport=httpx.MockTransport(lambda _: httpx.Response(200, json=scan_response.model_dump(mode="json")))
         )
     )
 
@@ -119,8 +119,16 @@ class TestFileValidator:
             kaspersky_scan_engine_client=get_mocked_kaspersky_scan_engine_client(ok_response=ok_response),
             allowed_mime_types=["image/png"],
         ).validate_file(file_name=faker.file_name(), file_content=png_file)
-    async def test_antivirus_fails(self, faker: faker.Faker, png_file: bytes) -> None:
+
+    async def test_antivirus_fails(self, faker: faker.Faker) -> None:
+        with pytest.raises(exceptions.ThreatDetectedError):
+            await FileValidator(
+                kaspersky_scan_engine_client=get_mocked_kaspersky_scan_engine_client(ok_response=False),
+                allowed_mime_types=["application/octet-stream"],
+            ).validate_file(file_name=faker.file_name(), file_content=generate_binary_content(faker))
+
+    async def test_antivirus_passes(self, faker: faker.Faker) -> None:
         await FileValidator(
-            kaspersky_scan_engine_client=get_mocked_kaspersky_scan_engine_client(ok_response=ok_response),
-            allowed_mime_types=["image/png"],
-        ).validate_file(file_name=faker.file_name(), file_content=png_file)
+            kaspersky_scan_engine_client=get_mocked_kaspersky_scan_engine_client(ok_response=True),
+            allowed_mime_types=["application/octet-stream"],
+        ).validate_file(file_name=faker.file_name(), file_content=generate_binary_content(faker))
