@@ -41,7 +41,7 @@ def png_file() -> bytes:
 
 def get_mocked_kaspersky_scan_engine_client(*, ok_response: bool) -> KasperskyScanEngineClient:
     if ok_response:
-        all_scan_results: typing.Final = list(KasperskyScanEngineScanResult)
+        all_scan_results: typing.Final[list[KasperskyScanEngineScanResult]] = list(KasperskyScanEngineScanResult)
         all_scan_results.remove(KasperskyScanEngineScanResult.DETECT)
         scan_result = random.choice(all_scan_results)
     else:
