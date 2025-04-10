@@ -39,14 +39,16 @@ class KasperskyScanEngineClient:
     http_client: httpx.AsyncClient
 
     @stamina.retry(on=httpx.HTTPError, attempts=3)
-    async def _send_request(self, payload: str) -> bytes:
-        response = await self.http_client.post(url=self.kaspersky_scan_engine_base_url, data=payload)
+    async def _send_request(self, payload: dict[str, typing.Any]) -> bytes:
+        response = await self.http_client.post(url=self.kaspersky_scan_engine_base_url, json=payload)
         response.raise_for_status()
         return response.content
 
     async def scan_memory(self, file_content: bytes) -> None:
         response: typing.Final = await self._send_request(
-            KasperskyScanEngineRequest(object=base64.b64encode(file_content).decode()).model_dump_json()
+            KasperskyScanEngineRequest(
+                timeout=str(self.kaspersky_scan_engine_timeout), object=base64.b64encode(file_content).decode()
+            ).model_dump(mode="json")
         )
         validated_response = KasperskyScanEngineResponse.model_validate_json(response)
         if validated_response.scan_result == KasperskyScanEngineScanResult.DETECT:
