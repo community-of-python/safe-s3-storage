@@ -5,7 +5,7 @@ import typing
 import puremagic
 import pyvips  # type: ignore[import-untyped]
 
-from safe_s3_storage.exceptions import FailedToConvertImageError, NotAllowedContentTypeError, TooLargeFileError
+from safe_s3_storage.exceptions import FailedToConvertImageError, NotAllowedMimeTypeError, TooLargeFileError
 from safe_s3_storage.kaspersky_scan_engine import KasperskyScanEngineClient
 
 
@@ -54,7 +54,7 @@ class FileValidator:
                 mime_type = "text/plain"
         if mime_type in self.allowed_mime_types:
             return mime_type
-        raise NotAllowedContentTypeError(
+        raise NotAllowedMimeTypeError(
             file_name=file_name, mime_type=mime_type, allowed_mime_types=self.allowed_mime_types
         )
 
@@ -62,7 +62,7 @@ class FileValidator:
         content_size: typing.Final = len(file_content)
         max_size: typing.Final = self.max_image_size_bytes if _is_image(mime_type) else self.max_file_size_bytes
         if content_size > max_size:
-            raise TooLargeFileError(file_name=file_name, content_type=mime_type, max_size=max_size)
+            raise TooLargeFileError(file_name=file_name, mime_type=mime_type, max_size=max_size)
         return content_size
 
     def _convert_image(self, validated_file: ValidatedFile) -> ValidatedFile:
@@ -79,7 +79,7 @@ class FileValidator:
             )
         except pyvips.Error as pyvips_error:
             raise FailedToConvertImageError(
-                file_name=validated_file.file_name, content_type=validated_file.mime_type
+                file_name=validated_file.file_name, mime_type=validated_file.mime_type
             ) from pyvips_error
 
         file_base_name, _file_extension = split_file_base_name_and_extensions(validated_file.file_name)

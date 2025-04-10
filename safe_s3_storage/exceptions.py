@@ -14,7 +14,7 @@ class ThreatDetectedError(BaseError):
 
 
 @dataclasses.dataclass
-class NotAllowedContentTypeError(BaseError):
+class NotAllowedMimeTypeError(BaseError):
     file_name: str
     mime_type: str
     allowed_mime_types: list[str]
@@ -23,11 +23,11 @@ class NotAllowedContentTypeError(BaseError):
 @dataclasses.dataclass
 class TooLargeFileError(BaseError):
     file_name: str
-    content_type: str
+    mime_type: str
     max_size: int
 
 
 @dataclasses.dataclass
 class FailedToConvertImageError(BaseError):
     file_name: str
-    content_type: str
+    mime_type: str
