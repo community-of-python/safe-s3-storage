@@ -96,18 +96,19 @@ class TestFileValidator:
         assert validated_file.file_size == len(validated_file.file_content)
         assert validated_file.mime_type == image_conversion_mime_type
 
-    async def test_ok_not_image(self, faker: faker.Faker) -> None:
+    @pytest.mark.parametrize("binary", [True, False])
+    async def test_ok_not_image(self, faker: faker.Faker, binary: bool) -> None:
         file_name: typing.Final = faker.file_name()
-        file_content: typing.Final = generate_binary_content(faker)
+        file_content: typing.Final = generate_binary_content(faker) if binary else faker.pystr().encode()
 
-        validated_file: typing.Final = await FileValidator(allowed_mime_types=[MIME_OCTET_STREAM]).validate_file(
-            file_name=file_name, file_content=file_content
-        )
+        validated_file: typing.Final = await FileValidator(
+            allowed_mime_types=[MIME_OCTET_STREAM if binary else "text/plain"]
+        ).validate_file(file_name=file_name, file_content=file_content)
 
         assert validated_file.file_name == file_name
         assert validated_file.file_content == file_content
         assert validated_file.file_size == len(file_content)
-        assert validated_file.mime_type == MIME_OCTET_STREAM
+        assert validated_file.mime_type == MIME_OCTET_STREAM if binary else "text/plain"
 
     @pytest.mark.parametrize("ok_response", [True, False])
     async def test_antivirus_skips_images(self, faker: faker.Faker, png_file: bytes, ok_response: bool) -> None:

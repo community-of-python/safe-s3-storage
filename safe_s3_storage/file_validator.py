@@ -51,7 +51,12 @@ class FileValidator:
         try:
             mime_type = puremagic.from_string(file_content, mime=True)
         except puremagic.PureError:
-            mime_type = "application/octet-stream"
+            try:
+                file_content.decode()
+            except UnicodeDecodeError:
+                mime_type = "application/octet-stream"
+            else:
+                mime_type = "text/plain"
         if mime_type in self.allowed_mime_types:
             return mime_type
         raise UnsupportedMimeTypeError(
