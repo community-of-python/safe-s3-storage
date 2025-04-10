@@ -48,7 +48,11 @@ class FileValidator:
     image_quality: int = 85
 
     def _validate_mime_type(self, *, file_name: str, file_content: bytes) -> str:
-        if (mime_type := puremagic.from_string(file_content, mime=True)) in self.allowed_mime_types:
+        try:
+            mime_type = puremagic.from_string(file_content, mime=True)
+        except puremagic.PureError:
+            mime_type = "application/octet-stream"
+        if mime_type in self.allowed_mime_types:
             return mime_type
         raise UnsupportedMimeTypeError(
             file_name=file_name, mime_type=mime_type, allowed_mime_types=self.allowed_mime_types
