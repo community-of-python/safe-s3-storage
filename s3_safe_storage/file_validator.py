@@ -11,21 +11,14 @@ from s3_safe_storage.kaspersky_scan_engine import KasperskyScanEngineClient
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class ValidatedFile:
-    file_content: bytes
     file_name: str
+    file_content: bytes
     file_size: int
     mime_type: str
 
 
 def _is_image(mime_type: str) -> bool:
     return mime_type.startswith("image/")
-
-
-@dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
-class UploadedFileContext:
-    file_name: str
-    file_content: bytes
-    mime_type: str
 
 
 class ImageConversionFormat(enum.StrEnum):
@@ -47,11 +40,11 @@ class _ImageConversionResult:
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class FileValidator:
-    kaspersky_scan_engine_client: KasperskyScanEngineClient | None
+    kaspersky_scan_engine_client: KasperskyScanEngineClient | None = None
     image_conversion_mime_type: ImageConversionFormat = ImageConversionFormat.webp
     allowed_mime_types: list[str]
-    max_file_size_bytes: int
-    max_image_size_bytes: int
+    max_file_size_bytes: int = 10 * 1024 * 1024
+    max_image_size_bytes: int = 50 * 1024 * 1024
     image_quality: int = 85
 
     def _validate_mime_type(self, *, file_name: str, file_content: bytes) -> str:
@@ -73,16 +66,11 @@ class FileValidator:
 
         try:
             pyvips_image: typing.Final[pyvips.Image] = pyvips.Image.new_from_buffer(file_content, options="")
-            new_file_content = (
-                file_content
-                if mime_type == self.image_conversion_mime_type
-                else typing.cast(
-                    "bytes",
-                    pyvips_image.write_to_buffer(
-                        _IMAGE_CONVERSION_FORMAT_TO_PYVIPS_EXTENSION[self.image_conversion_mime_type],
-                        Q=self.image_quality,
-                    ),
-                )
+            new_file_content = typing.cast(
+                "bytes",
+                pyvips_image.write_to_buffer(
+                    _IMAGE_CONVERSION_FORMAT_TO_PYVIPS_EXTENSION[self.image_conversion_mime_type], Q=self.image_quality
+                ),
             )
         except pyvips.Error as pyvips_error:
             raise FailedToConvertImageError(file_name=file_name, mime_type=mime_type) from pyvips_error

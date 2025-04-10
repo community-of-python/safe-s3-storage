@@ -21,11 +21,19 @@ dependencies = [
     "stamina",
     "pydantic",
     "python-magic",
-    "pyvips>=2.2.3",
+    "pyvips",
+    "pyvips-binary",
 ]
 
 [dependency-groups]
-dev = ["anyio", "faker", "pytest", "pytest-cov"]
+dev = [
+    "anyio",
+    "faker",
+    "faker-file[docx,jpeg,png,webp]>=0.18.1",
+    "imgkit>=1.2.3",
+    "pytest",
+    "pytest-cov",
+]
 lint = [{ include-group = "dev" }, "auto-typing-final", "mypy", "ruff"]
 
 [build-system]
