@@ -18,3 +18,9 @@ class TooLargeFileError(Exception):
     file_name: str
     mime_type: str
     max_size: int
+
+
+@dataclasses.dataclass
+class FailedToConvertImageError(Exception):
+    file_name: str
+    mime_type: str

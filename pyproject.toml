@@ -20,7 +20,8 @@ dependencies = [
     "types-aioboto3[s3]",
     "stamina",
     "pydantic",
-    "python-magic"
+    "python-magic",
+    "pyvips>=2.2.3",
 ]
 
 [dependency-groups]
