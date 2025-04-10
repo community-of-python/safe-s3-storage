@@ -1,4 +1,5 @@
 import random
+import typing
 
 import faker
 import httpx
@@ -57,6 +58,9 @@ def get_mocked_kaspersky_scan_engine_client(*, ok_response: bool) -> KasperskySc
     )
 
 
+MIME_OCTET_STREAM: typing.Final = "application/octet-stream"
+
+
 class TestFileValidator:
     async def test_fails_to_validate_mime_type(self, faker: faker.Faker) -> None:
         with pytest.raises(exceptions.UnsupportedMimeTypeError):
@@ -66,7 +70,7 @@ class TestFileValidator:
 
     async def test_fails_to_validate_file_size(self, faker: faker.Faker) -> None:
         with pytest.raises(exceptions.TooLargeFileError):
-            await FileValidator(allowed_mime_types=["application/octet-stream"], max_file_size_bytes=0).validate_file(
+            await FileValidator(allowed_mime_types=[MIME_OCTET_STREAM], max_file_size_bytes=0).validate_file(
                 file_name=faker.file_name(), file_content=generate_binary_content(faker)
             )
 
@@ -98,18 +102,17 @@ class TestFileValidator:
         assert validated_file.mime_type == image_conversion_mime_type
 
     async def test_ok_not_image(self, faker: faker.Faker) -> None:
-        mime_type = "application/octet-stream"
         file_name = faker.file_name()
         file_content = generate_binary_content(faker)
 
-        validated_file = await FileValidator(allowed_mime_types=[mime_type]).validate_file(
+        validated_file = await FileValidator(allowed_mime_types=[MIME_OCTET_STREAM]).validate_file(
             file_name=file_name, file_content=file_content
         )
 
         assert validated_file.file_name == file_name
         assert validated_file.file_content == file_content
         assert validated_file.file_size == len(file_content)
-        assert validated_file.mime_type == mime_type
+        assert validated_file.mime_type == MIME_OCTET_STREAM
 
     @pytest.mark.parametrize("ok_response", [True, False])
     async def test_antivirus_skips_images(self, faker: faker.Faker, png_file: bytes, ok_response: bool) -> None:
@@ -122,11 +125,11 @@ class TestFileValidator:
         with pytest.raises(exceptions.ThreatDetectedError):
             await FileValidator(
                 kaspersky_scan_engine_client=get_mocked_kaspersky_scan_engine_client(ok_response=False),
-                allowed_mime_types=["application/octet-stream"],
+                allowed_mime_types=[MIME_OCTET_STREAM],
             ).validate_file(file_name=faker.file_name(), file_content=generate_binary_content(faker))
 
     async def test_antivirus_passes(self, faker: faker.Faker) -> None:
         await FileValidator(
             kaspersky_scan_engine_client=get_mocked_kaspersky_scan_engine_client(ok_response=True),
-            allowed_mime_types=["application/octet-stream"],
+            allowed_mime_types=[MIME_OCTET_STREAM],
         ).validate_file(file_name=faker.file_name(), file_content=generate_binary_content(faker))
