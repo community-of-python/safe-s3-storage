@@ -45,7 +45,7 @@ class FileValidator:
         try:
             mime_type = puremagic.from_string(file_content, mime=True)
         except puremagic.PureError:
-            # puremagic unlike python-magic doesn't recognize if text is binary
+            # unlike python-magic, puremagic doesn't recognize if text is binary
             try:
                 file_content.decode()
             except UnicodeDecodeError:
