@@ -48,7 +48,7 @@ class _ImageConversionResult:
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class FileValidator:
     kaspersky_scan_engine_client: KasperskyScanEngineClient | None = None
-    image_conversion_mime_type: ImageConversionFormat = ImageConversionFormat.jpeg
+    image_conversion_mime_type: ImageConversionFormat = ImageConversionFormat.webp
     allowed_mime_types: list[str]
     max_file_size_bytes: int
     max_image_size_bytes: int
