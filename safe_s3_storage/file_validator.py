@@ -22,6 +22,7 @@ def _is_image(mime_type: str) -> bool:
 
 
 class ImageConversionFormat(enum.Enum):
+    # mime type, file extension
     jpeg = ("image/jpeg", "jpg")
     webp = ("image/webp", "webp")
 
@@ -33,12 +34,12 @@ def split_file_base_name_and_extensions(file_name: str) -> tuple[str, str | None
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class FileValidator:
-    kaspersky_scan_engine_client: KasperskyScanEngineClient | None = None
+    kaspersky_scan_engine: KasperskyScanEngineClient | None = None
     image_conversion_format: ImageConversionFormat = ImageConversionFormat.webp
     allowed_mime_types: list[str]
-    max_file_size_bytes: int = 10 * 1024 * 1024
-    max_image_size_bytes: int = 50 * 1024 * 1024
-    image_quality: int = 85
+    max_file_size_bytes: int = 10 * 1024 * 1024  # 10 MB
+    max_image_size_bytes: int = 50 * 1024 * 1024  # 50 MB
+    pyvips_image_quality: int = 85
 
     def _validate_mime_type(self, *, file_name: str, file_content: bytes) -> str:
         try:
@@ -74,7 +75,7 @@ class FileValidator:
             )
             new_file_content: typing.Final = typing.cast(
                 "bytes",
-                pyvips_image.write_to_buffer(f".{self.image_conversion_format.value[1]}", Q=self.image_quality),
+                pyvips_image.write_to_buffer(f".{self.image_conversion_format.value[1]}", Q=self.pyvips_image_quality),
             )
         except pyvips.Error as pyvips_error:
             raise FailedToConvertImageError(
@@ -97,6 +98,6 @@ class FileValidator:
         validated_file: typing.Final = self._convert_image(
             ValidatedFile(file_name=file_name, file_content=file_content, mime_type=mime_type, file_size=file_size)
         )
-        if self.kaspersky_scan_engine_client and not _is_image(validated_file.mime_type):
-            await self.kaspersky_scan_engine_client.scan_memory(file_content=validated_file.file_content)
+        if self.kaspersky_scan_engine and not _is_image(validated_file.mime_type):
+            await self.kaspersky_scan_engine.scan_memory(file_content=validated_file.file_content)
         return validated_file
