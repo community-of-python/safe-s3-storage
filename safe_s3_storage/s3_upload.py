@@ -10,11 +10,7 @@ from safe_s3_storage.s3_base import BaseS3Service
 
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
-class UploadedFile:
-    file_content: bytes
-    file_name: str
-    file_size: int
-    mime_type: str
+class UploadedFile(ValidatedFile):
     s3_path: str
 
 
@@ -39,8 +35,8 @@ class S3FilesUploader(BaseS3Service):
         )
 
         return UploadedFile(
-            file_content=validated_file.file_content,
             file_name=validated_file.file_name,
+            file_content=validated_file.file_content,
             file_size=validated_file.file_size,
             mime_type=validated_file.mime_type,
             s3_path=f"{self.bucket_name}/{s3_key}",
