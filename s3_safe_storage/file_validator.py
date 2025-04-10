@@ -33,6 +33,12 @@ class ImageConversionFormat(enum.StrEnum):
     webp = "image/webp"
 
 
+_IMAGE_CONVERSION_FORMAT_TO_PYVIPS_EXTENSION: typing.Final = {
+    ImageConversionFormat.jpeg: ".jpg",
+    ImageConversionFormat.webp: ".webp",
+}
+
+
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class _ImageConversionResult:
     file_content: bytes
@@ -46,6 +52,7 @@ class FileValidator:
     allowed_mime_types: list[str]
     max_file_size_bytes: int
     max_image_size_bytes: int
+    image_quality: int = 85
 
     def _validate_mime_type(self, *, file_name: str, file_content: bytes) -> str:
         if (mime_type := magic.from_buffer(file_content, mime=True)) in self.allowed_mime_types:
@@ -69,7 +76,13 @@ class FileValidator:
             new_file_content = (
                 file_content
                 if mime_type == self.image_conversion_mime_type
-                else typing.cast("bytes", pyvips_image.write_to_buffer(".webp", Q=85))
+                else typing.cast(
+                    "bytes",
+                    pyvips_image.write_to_buffer(
+                        _IMAGE_CONVERSION_FORMAT_TO_PYVIPS_EXTENSION[self.image_conversion_mime_type],
+                        Q=self.image_quality,
+                    ),
+                )
             )
         except pyvips.Error as pyvips_error:
             raise FailedToConvertImageError(file_name=file_name, mime_type=mime_type) from pyvips_error
