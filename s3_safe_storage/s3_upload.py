@@ -3,11 +3,10 @@ import typing
 
 import botocore
 import botocore.exceptions
-import httpx
 import stamina
-from types_aiobotocore_s3 import S3Client
 
 from s3_safe_storage.file_validator import FileValidator, ValidatedFile
+from s3_safe_storage.s3_base import BaseS3CRUD
 
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
@@ -27,13 +26,8 @@ class UploadedFileContext:
 
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
-class S3FilesUploader:
+class S3FilesUploader(BaseS3CRUD):
     file_validator: FileValidator
-    httpx_client: httpx.AsyncClient
-    s3_client: S3Client
-
-    s3_bucket_name: str
-    s3_retries: int = 3
     s3_key_generator: typing.Callable[[ValidatedFile], str] = lambda file_context: file_context.file_name
     s3_metadata_generator: typing.Callable[[ValidatedFile], typing.Mapping[str, str]] = lambda _file_context: {}
 
