@@ -59,6 +59,7 @@ class S3FilesUploader:
     validate_s3_file_metadata_before_get_or_delete: typing.Callable[[dict[str, str]], None] | None = None
     s3_key_generator: typing.Callable[[UploadedFileContext], str] = lambda file_context: file_context.file_name
     s3_metadata_generator: typing.Callable[[UploadedFileContext], typing.Mapping[str, str]] = lambda _file_context: {}
+    s3_retries: int = 3
 
     def _validate_mime_type(self, *, file_name: str, file_content: bytes) -> str:
         if (mime_type := magic.from_buffer(file_content, mime=True)) in self.allowed_mime_types:
@@ -74,7 +75,6 @@ class S3FilesUploader:
             raise TooLargeFileError(file_name=file_name, mime_type=mime_type, max_size=max_size)
         return content_size
 
-    @stamina.retry(on=botocore.exceptions.BotoCoreError, attempts=3) 
     async def upload_file(self, *, file_name: str, file_content: bytes, metadata: dict[str, str]) -> UploadedFile:
         mime_type = self._validate_mime_type(file_name=file_name, file_content=file_content)
         content_size = self._validate_file_size(file_name=file_name, file_content=file_content, mime_type=mime_type)
@@ -84,7 +84,7 @@ class S3FilesUploader:
             content_size=content_size,
             mime_type=mime_type,
         )
-        await self.s3_client.put_object(
+        await stamina.retry(on=botocore.exceptions.BotoCoreError, attempts=self.s3_retries)(self.s3_client.put_object)(
             Body=file_content,
             Bucket=self.s3_bucket_name,
             Key=self.s3_key_generator(file_context),
