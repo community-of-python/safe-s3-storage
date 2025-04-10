@@ -21,27 +21,20 @@ def _is_image(mime_type: str) -> bool:
     return mime_type.startswith("image/")
 
 
-class ImageConversionMimeType(enum.StrEnum):
-    jpeg = "image/jpeg"
-    webp = "image/webp"
+class ImageConversionFormat(enum.Enum):
+    jpeg = ("image/jpeg", "jpg")
+    webp = ("image/webp", "webp")
 
 
-_IMAGE_CONVERSION_FORMAT_TO_PYVIPS_EXTENSION: typing.Final = {
-    ImageConversionMimeType.jpeg: ".jpg",
-    ImageConversionMimeType.webp: ".webp",
-}
-
-
-@dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
-class _ImageConversionResult:
-    file_content: bytes
-    mime_type: str
+def split_file_base_name_and_extensions(file_name: str) -> tuple[str, str | None]:
+    split_result: typing.Final = file_name.rsplit(".", 1) or [file_name]
+    return split_result[0], None if len(split_result) == 1 else split_result[1]
 
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class FileValidator:
     kaspersky_scan_engine_client: KasperskyScanEngineClient | None = None
-    image_conversion_mime_type: ImageConversionMimeType = ImageConversionMimeType.webp
+    image_conversion_format: ImageConversionFormat = ImageConversionFormat.webp
     allowed_mime_types: list[str]
     max_file_size_bytes: int = 10 * 1024 * 1024
     max_image_size_bytes: int = 50 * 1024 * 1024
@@ -81,20 +74,19 @@ class FileValidator:
             )
             new_file_content: typing.Final = typing.cast(
                 "bytes",
-                pyvips_image.write_to_buffer(
-                    _IMAGE_CONVERSION_FORMAT_TO_PYVIPS_EXTENSION[self.image_conversion_mime_type], Q=self.image_quality
-                ),
+                pyvips_image.write_to_buffer(f".{self.image_conversion_format.value[1]}", Q=self.image_quality),
             )
         except pyvips.Error as pyvips_error:
             raise FailedToConvertImageError(
                 file_name=validated_file.file_name, mime_type=validated_file.mime_type
             ) from pyvips_error
 
+        file_base_name, _file_extension = split_file_base_name_and_extensions(validated_file.file_name)
         return ValidatedFile(
-            file_name=validated_file.file_name,
+            file_name=f"{file_base_name}.{self.image_conversion_format.value[1]}",
             file_content=new_file_content,
             file_size=len(new_file_content),
-            mime_type=self.image_conversion_mime_type,
+            mime_type=self.image_conversion_format.value[0],
         )
 
     async def validate_file(self, *, file_name: str, file_content: bytes) -> ValidatedFile:

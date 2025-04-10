@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from safe_s3_storage import exceptions
-from safe_s3_storage.file_validator import FileValidator, ImageConversionMimeType
+from safe_s3_storage.file_validator import FileValidator, ImageConversionFormat
 from safe_s3_storage.kaspersky_scan_engine import (
     KasperskyScanEngineClient,
     KasperskyScanEngineResponse,
@@ -81,20 +81,20 @@ class TestFileValidator:
                 file_name=faker.file_name(), file_content=png_file[:50]
             )
 
-    @pytest.mark.parametrize("image_conversion_mime_type", list(ImageConversionMimeType))
+    @pytest.mark.parametrize("image_conversion_format", list(ImageConversionFormat))
     async def test_ok_image(
-        self, faker: faker.Faker, png_file: bytes, image_conversion_mime_type: ImageConversionMimeType
+        self, faker: faker.Faker, png_file: bytes, image_conversion_format: ImageConversionFormat
     ) -> None:
-        file_name: typing.Final = faker.file_name()
+        file_base_name: typing.Final = faker.pystr()
 
         validated_file: typing.Final = await FileValidator(
-            allowed_mime_types=["image/png"], image_conversion_mime_type=image_conversion_mime_type
-        ).validate_file(file_name=file_name, file_content=png_file)
+            allowed_mime_types=["image/png"], image_conversion_format=image_conversion_format
+        ).validate_file(file_name=f"{file_base_name}.{faker.file_extension()}", file_content=png_file)
 
-        assert validated_file.file_name == file_name
+        assert validated_file.file_name == f"{file_base_name}.{image_conversion_format.value[1]}"
         assert validated_file.file_content != png_file
         assert validated_file.file_size == len(validated_file.file_content)
-        assert validated_file.mime_type == image_conversion_mime_type
+        assert validated_file.mime_type == image_conversion_format.value[0]
 
     @pytest.mark.parametrize("binary", [True, False])
     async def test_ok_not_image(self, faker: faker.Faker, binary: bool) -> None:
