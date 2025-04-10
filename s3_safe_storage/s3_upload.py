@@ -19,13 +19,6 @@ class UploadedFile:
 
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
-class UploadedFileContext:
-    file_name: str
-    file_content: bytes
-    mime_type: str
-
-
-@dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class S3FilesUploader(BaseS3Service):
     file_validator: FileValidator
     s3_key_generator: typing.Callable[[ValidatedFile], str] = lambda file_context: file_context.file_name
