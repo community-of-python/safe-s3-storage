@@ -64,18 +64,21 @@ class FileValidator:
             file_name=file_name, mime_type=mime_type, allowed_mime_types=self.allowed_mime_types
         )
 
-    def _validate_file_size(self, *, file_name: str, file_content: bytes, mime_type: str) -> None:
+    def _validate_file_size(self, *, file_name: str, file_content: bytes, mime_type: str) -> int:
         content_size: typing.Final = len(file_content)
         max_size: typing.Final = self.max_image_size_bytes if _is_image(mime_type) else self.max_file_size_bytes
         if content_size > max_size:
             raise TooLargeFileError(file_name=file_name, mime_type=mime_type, max_size=max_size)
+        return content_size
 
-    def _convert_image(self, *, file_name: str, file_content: bytes, mime_type: str) -> _ImageConversionResult | None:
-        if not _is_image(mime_type):
-            return None
+    def _convert_image(self, validated_file: ValidatedFile) -> ValidatedFile:
+        if not _is_image(validated_file.mime_type):
+            return validated_file
 
         try:
-            pyvips_image: typing.Final[pyvips.Image] = pyvips.Image.new_from_buffer(file_content, options="")
+            pyvips_image: typing.Final[pyvips.Image] = pyvips.Image.new_from_buffer(
+                validated_file.file_content, options=""
+            )
             new_file_content: typing.Final = typing.cast(
                 "bytes",
                 pyvips_image.write_to_buffer(
@@ -83,23 +86,27 @@ class FileValidator:
                 ),
             )
         except pyvips.Error as pyvips_error:
-            raise FailedToConvertImageError(file_name=file_name, mime_type=mime_type) from pyvips_error
+            raise FailedToConvertImageError(
+                file_name=validated_file.file_name, mime_type=validated_file.mime_type
+            ) from pyvips_error
 
-        return _ImageConversionResult(file_content=new_file_content, mime_type=self.image_conversion_mime_type)
+        return ValidatedFile(
+            file_name=validated_file.file_name,
+            file_content=new_file_content,
+            file_size=len(new_file_content),
+            mime_type=self.image_conversion_mime_type,
+        )
 
     async def validate_file(self, *, file_name: str, file_content: bytes) -> ValidatedFile:
-        mime_type = self._validate_mime_type(file_name=file_name, file_content=file_content)
-        self._validate_file_size(file_name=file_name, file_content=file_content, mime_type=mime_type)
-        if conversion_result := self._convert_image(
-            file_name=file_name, file_content=file_content, mime_type=mime_type
-        ):
-            file_content = conversion_result.file_content
-            mime_type = conversion_result.mime_type
-        if self.kaspersky_scan_engine_client and not _is_image(mime_type):
-            await self.kaspersky_scan_engine_client.scan_memory(file_content=file_content)
-        return ValidatedFile(
-            file_content=file_content,
-            file_name=file_name,
-            file_size=len(file_content),
-            mime_type=mime_type,
+        mime_type: typing.Final = self._validate_mime_type(file_name=file_name, file_content=file_content)
+        validated_file: typing.Final = self._convert_image(
+            ValidatedFile(
+                file_name=file_name,
+                file_content=file_content,
+                mime_type=mime_type,
+                file_size=self._validate_file_size(file_name=file_name, file_content=file_content, mime_type=mime_type),
+            )
         )
+        if self.kaspersky_scan_engine_client and not _is_image(validated_file.mime_type):
+            await self.kaspersky_scan_engine_client.scan_memory(file_content=validated_file.file_content)
+        return validated_file
