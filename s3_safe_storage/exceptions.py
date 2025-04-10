@@ -3,7 +3,7 @@ import dataclasses
 
 @dataclasses.dataclass
 class ThreatDetectedError(Exception):
-    response: bytes
+    antivirus_response: bytes
 
 
 @dataclasses.dataclass

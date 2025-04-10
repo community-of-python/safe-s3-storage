@@ -51,4 +51,4 @@ class KasperskyScanEngineClient:
         )(payload)
         validated_response = KasperskyScanEngineResponse.model_validate_json(response)
         if validated_response.scan_result == KasperskyScanEngineScanResult.DETECT:
-            raise ThreatDetectedError(response=response)
+            raise ThreatDetectedError(antivirus_response=response)
