@@ -33,18 +33,18 @@ class KasperskyScanEngineResponse(pydantic.BaseModel):
 class KasperskyScanEngineClient:
     http_client: httpx.AsyncClient
 
-    kaspersky_scan_engine_base_url: str
-    kaspersky_scan_engine_timeout: int
+    kaspersky_scan_engine_url: str = "http://127.0.0.1:9998/api/v3.0/scanmemory"
+    kaspersky_scan_engine_timeout_ms: int = 10000
     kaspersky_scan_engine_retries: int = 3
 
     async def _send_scan_memory_request(self, payload: dict[str, typing.Any]) -> bytes:
-        response = await self.http_client.post(url=self.kaspersky_scan_engine_base_url, json=payload)
+        response = await self.http_client.post(url=self.kaspersky_scan_engine_url, json=payload)
         response.raise_for_status()
         return response.content
 
     async def scan_memory(self, file_content: bytes) -> None:
         payload = KasperskyScanEngineRequest(
-            timeout=str(self.kaspersky_scan_engine_timeout), object=base64.b64encode(file_content).decode()
+            timeout=str(self.kaspersky_scan_engine_timeout_ms), object=base64.b64encode(file_content).decode()
         ).model_dump(mode="json")
         response: typing.Final = await stamina.retry(on=httpx.HTTPError, attempts=self.kaspersky_scan_engine_retries)(
             self._send_scan_memory_request
