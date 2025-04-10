@@ -13,6 +13,7 @@ from safe_s3_storage.exceptions import ThreatDetectedError
 class KasperskyScanEngineRequest(pydantic.BaseModel):
     timeout: str
     object: str
+    name: str
 
 
 # https://support.kaspersky.ru/scan-engine/2.1/193001
@@ -33,6 +34,7 @@ class KasperskyScanEngineResponse(pydantic.BaseModel):
 class KasperskyScanEngineClient:
     httpx_client: httpx.AsyncClient
     service_url: str
+    name_field: str
     timeout_field_ms: int = 10000
     max_retries: int = 3
 
@@ -43,7 +45,7 @@ class KasperskyScanEngineClient:
 
     async def scan_memory(self, *, file_name: str, file_content: bytes) -> None:
         payload: typing.Final = KasperskyScanEngineRequest(
-            timeout=str(self.timeout_field_ms), object=base64.b64encode(file_content).decode()
+            timeout=str(self.timeout_field_ms), object=base64.b64encode(file_content).decode(), name=self.name_field
         ).model_dump(mode="json")
         response: typing.Final = await stamina.retry(on=httpx.HTTPError, attempts=self.max_retries)(
             self._send_scan_memory_request
