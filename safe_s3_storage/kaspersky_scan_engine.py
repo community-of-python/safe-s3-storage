@@ -42,7 +42,7 @@ class KasperskyScanEngineClient:
         response.raise_for_status()
         return response.content
 
-    async def scan_memory(self, file_content: bytes) -> None:
+    async def scan_memory(self, *, file_name: str, file_content: bytes) -> None:
         payload: typing.Final = KasperskyScanEngineRequest(
             timeout=str(self.timeout_field_ms), object=base64.b64encode(file_content).decode()
         ).model_dump(mode="json")
@@ -51,4 +51,4 @@ class KasperskyScanEngineClient:
         )(payload)
         validated_response: typing.Final = KasperskyScanEngineResponse.model_validate_json(response)
         if validated_response.scanResult == KasperskyScanEngineScanResult.DETECT:
-            raise ThreatDetectedError(antivirus_response=response)
+            raise ThreatDetectedError(antivirus_response=response, file_name=file_name)

@@ -10,6 +10,7 @@ class BaseError(Exception):
 @dataclasses.dataclass
 class ThreatDetectedError(BaseError):
     antivirus_response: bytes
+    file_name: str
 
 
 @dataclasses.dataclass

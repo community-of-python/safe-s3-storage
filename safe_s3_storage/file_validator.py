@@ -99,5 +99,7 @@ class FileValidator:
             ValidatedFile(file_name=file_name, file_content=file_content, mime_type=mime_type, file_size=file_size)
         )
         if self.kaspersky_scan_engine and not _is_image(validated_file.mime_type):
-            await self.kaspersky_scan_engine.scan_memory(file_content=validated_file.file_content)
+            await self.kaspersky_scan_engine.scan_memory(
+                file_name=validated_file.file_name, file_content=validated_file.file_content
+            )
         return validated_file
