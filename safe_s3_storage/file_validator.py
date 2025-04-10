@@ -35,10 +35,11 @@ def _split_file_base_name_and_extensions(file_name: str) -> tuple[str, str | Non
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class FileValidator:
     kaspersky_scan_engine: KasperskyScanEngineClient | None = None
-    image_conversion_format: ImageConversionFormat = ImageConversionFormat.webp
     allowed_mime_types: list[str]
+    scan_images_with_antivirus: bool = False
     max_file_size_bytes: int = 10 * 1024 * 1024  # 10 MB
     max_image_size_bytes: int = 50 * 1024 * 1024  # 50 MB
+    image_conversion_format: ImageConversionFormat = ImageConversionFormat.webp
     image_quality: int = 85
 
     def _validate_mime_type(self, *, file_name: str, file_content: bytes) -> str:
@@ -98,8 +99,10 @@ class FileValidator:
         validated_file: typing.Final = self._convert_image(
             ValidatedFile(file_name=file_name, file_content=file_content, mime_type=mime_type, file_size=file_size)
         )
-        if self.kaspersky_scan_engine and not _is_image(validated_file.mime_type):
-            await self.kaspersky_scan_engine.scan_memory(
-                file_name=validated_file.file_name, file_content=validated_file.file_content
-            )
+        if self.kaspersky_scan_engine:
+            is_image: typing.Final = _is_image(validated_file.mime_type)
+            if (is_image and self.scan_images_with_antivirus) or not is_image:
+                await self.kaspersky_scan_engine.scan_memory(
+                    file_name=validated_file.file_name, file_content=validated_file.file_content
+                )
         return validated_file
