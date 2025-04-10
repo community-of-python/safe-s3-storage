@@ -49,7 +49,7 @@ def get_mocked_kaspersky_scan_engine_client(*, faker: faker.Faker, ok_response: 
 
     scan_response: typing.Final = KasperskyScanEngineResponse(scanResult=scan_result)
     return KasperskyScanEngineClient(
-        kaspersky_scan_engine_url=faker.url(schemes=["http"]),
+        service_url=faker.url(schemes=["http"]),
         httpx_client=httpx.AsyncClient(
             transport=httpx.MockTransport(lambda _: httpx.Response(200, json=scan_response.model_dump(mode="json")))
         ),
