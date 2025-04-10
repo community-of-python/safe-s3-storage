@@ -29,7 +29,7 @@ class KasperskyScanEngineResponse(pydantic.BaseModel):
     scanResult: KasperskyScanEngineScanResult  # noqa: N815
 
 
-@dataclasses.dataclass(kw_only=True, frozen=True, slots=True)
+@dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class KasperskyScanEngineClient:
     httpx_client: httpx.AsyncClient
 
