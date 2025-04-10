@@ -97,7 +97,6 @@ class TestFileValidator:
         assert validated_file.file_size == len(validated_file.file_content)
         assert validated_file.mime_type == image_conversion_mime_type
 
-    #  TODO: test with output png image just for sure
     async def test_ok_not_image(self, faker: faker.Faker) -> None:
         mime_type = "application/octet-stream"
         file_name = faker.file_name()
