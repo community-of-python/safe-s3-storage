@@ -7,6 +7,8 @@ import httpx
 import pydantic
 import stamina
 
+from s3_safe_storage.exceptions import ThreatDetectedError
+
 
 class KasperskyScanEngineRequest(pydantic.BaseModel):
     timeout: str
@@ -25,11 +27,6 @@ class KasperskyScanEngineScanResult(enum.StrEnum):
 
 class KasperskyScanEngineResponse(pydantic.BaseModel):
     scan_result: typing.Annotated[KasperskyScanEngineScanResult, pydantic.Field(alias="scanResult")]
-
-
-@dataclasses.dataclass
-class ThreatDetectedError(Exception):
-    response: bytes
 
 
 @dataclasses.dataclass(kw_only=True, frozen=True, slots=True)

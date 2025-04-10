@@ -8,6 +8,8 @@ import magic
 import stamina
 from types_aiobotocore_s3 import S3Client
 
+from s3_safe_storage.exceptions import TooLargeFileError, UnsupportedMimeTypeError
+
 
 class UploadedFile:
     file_content: bytes
@@ -15,20 +17,6 @@ class UploadedFile:
     file_size: int
     mime_type: str
     s3_path: str
-
-
-@dataclasses.dataclass
-class UnsupportedMimeTypeError(Exception):
-    file_name: str
-    mime_type: str
-    allowed_mime_types: list[str]
-
-
-@dataclasses.dataclass
-class TooLargeFileError(Exception):
-    file_name: str
-    mime_type: str
-    max_size: int
 
 
 def _is_image(mime_type: str) -> bool:
@@ -55,8 +43,6 @@ class S3FilesUploader:
     allowed_mime_types: list[str]
     max_file_size_bytes: int
     max_image_size_bytes: int
-    temporary_upload_url_expires_seconds: int = 3600
-    validate_s3_file_metadata_before_get_or_delete: typing.Callable[[dict[str, str]], None] | None = None
     s3_key_generator: typing.Callable[[UploadedFileContext], str] = lambda file_context: file_context.file_name
     s3_metadata_generator: typing.Callable[[UploadedFileContext], typing.Mapping[str, str]] = lambda _file_context: {}
     s3_retries: int = 3
@@ -75,7 +61,7 @@ class S3FilesUploader:
             raise TooLargeFileError(file_name=file_name, mime_type=mime_type, max_size=max_size)
         return content_size
 
-    async def upload_file(self, *, file_name: str, file_content: bytes, metadata: dict[str, str]) -> UploadedFile:
+    async def upload_file(self, *, file_name: str, file_content: bytes) -> UploadedFile:
         mime_type = self._validate_mime_type(file_name=file_name, file_content=file_content)
         content_size = self._validate_file_size(file_name=file_name, file_content=file_content, mime_type=mime_type)
         file_context = UploadedFileContext(
