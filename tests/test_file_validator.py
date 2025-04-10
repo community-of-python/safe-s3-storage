@@ -1,5 +1,4 @@
 import random
-import typing
 
 import faker
 import httpx
@@ -12,10 +11,7 @@ from s3_safe_storage.kaspersky_scan_engine import (
     KasperskyScanEngineResponse,
     KasperskyScanEngineScanResult,
 )
-
-
-def generate_binary_content(faker: faker.Faker) -> bytes:
-    return faker.binary(length=faker.pyint(min_value=10, max_value=100))
+from tests.conftest import MIME_OCTET_STREAM, generate_binary_content
 
 
 @pytest.fixture
@@ -56,9 +52,6 @@ def get_mocked_kaspersky_scan_engine_client(*, ok_response: bool) -> KasperskySc
             transport=httpx.MockTransport(lambda _: httpx.Response(200, json=scan_response.model_dump(mode="json")))
         )
     )
-
-
-MIME_OCTET_STREAM: typing.Final = "application/octet-stream"
 
 
 class TestFileValidator:
