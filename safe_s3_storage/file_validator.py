@@ -99,13 +99,11 @@ class FileValidator:
 
     async def validate_file(self, *, file_name: str, file_content: bytes) -> ValidatedFile:
         mime_type: typing.Final = self._validate_mime_type(file_name=file_name, file_content=file_content)
+        file_size: typing.Final = self._validate_file_size(
+            file_name=file_name, file_content=file_content, mime_type=mime_type
+        )
         validated_file: typing.Final = self._convert_image(
-            ValidatedFile(
-                file_name=file_name,
-                file_content=file_content,
-                mime_type=mime_type,
-                file_size=self._validate_file_size(file_name=file_name, file_content=file_content, mime_type=mime_type),
-            )
+            ValidatedFile(file_name=file_name, file_content=file_content, mime_type=mime_type, file_size=file_size)
         )
         if self.kaspersky_scan_engine_client and not _is_image(validated_file.mime_type):
             await self.kaspersky_scan_engine_client.scan_memory(file_content=validated_file.file_content)
