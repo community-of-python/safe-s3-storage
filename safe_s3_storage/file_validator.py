@@ -39,7 +39,7 @@ class FileValidator:
     allowed_mime_types: list[str]
     max_file_size_bytes: int = 10 * 1024 * 1024  # 10 MB
     max_image_size_bytes: int = 50 * 1024 * 1024  # 50 MB
-    pyvips_image_quality: int = 85
+    image_quality: int = 85
 
     def _validate_mime_type(self, *, file_name: str, file_content: bytes) -> str:
         try:
@@ -75,7 +75,7 @@ class FileValidator:
             )
             new_file_content: typing.Final = typing.cast(
                 "bytes",
-                pyvips_image.write_to_buffer(f".{self.image_conversion_format.value[1]}", Q=self.pyvips_image_quality),
+                pyvips_image.write_to_buffer(f".{self.image_conversion_format.value[1]}", Q=self.image_quality),
             )
         except pyvips.Error as pyvips_error:
             raise FailedToConvertImageError(
