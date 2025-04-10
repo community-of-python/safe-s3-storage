@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from s3_safe_storage import exceptions
-from s3_safe_storage.file_validator import FileValidator, ImageConversionFormat
+from s3_safe_storage.file_validator import FileValidator, ImageConversionMimeType
 from s3_safe_storage.kaspersky_scan_engine import (
     KasperskyScanEngineClient,
     KasperskyScanEngineResponse,
@@ -86,9 +86,9 @@ class TestFileValidator:
                 file_name=faker.file_name(), file_content=png_file[:50]
             )
 
-    @pytest.mark.parametrize("image_conversion_mime_type", list(ImageConversionFormat))
+    @pytest.mark.parametrize("image_conversion_mime_type", list(ImageConversionMimeType))
     async def test_ok_image(
-        self, faker: faker.Faker, png_file: bytes, image_conversion_mime_type: ImageConversionFormat
+        self, faker: faker.Faker, png_file: bytes, image_conversion_mime_type: ImageConversionMimeType
     ) -> None:
         file_name = faker.file_name()
 

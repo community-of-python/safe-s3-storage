@@ -21,14 +21,14 @@ def _is_image(mime_type: str) -> bool:
     return mime_type.startswith("image/")
 
 
-class ImageConversionFormat(enum.StrEnum):
+class ImageConversionMimeType(enum.StrEnum):
     jpeg = "image/jpeg"
     webp = "image/webp"
 
 
 _IMAGE_CONVERSION_FORMAT_TO_PYVIPS_EXTENSION: typing.Final = {
-    ImageConversionFormat.jpeg: ".jpg",
-    ImageConversionFormat.webp: ".webp",
+    ImageConversionMimeType.jpeg: ".jpg",
+    ImageConversionMimeType.webp: ".webp",
 }
 
 
@@ -41,7 +41,7 @@ class _ImageConversionResult:
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class FileValidator:
     kaspersky_scan_engine_client: KasperskyScanEngineClient | None = None
-    image_conversion_mime_type: ImageConversionFormat = ImageConversionFormat.webp
+    image_conversion_mime_type: ImageConversionMimeType = ImageConversionMimeType.webp
     allowed_mime_types: list[str]
     max_file_size_bytes: int = 10 * 1024 * 1024
     max_image_size_bytes: int = 50 * 1024 * 1024
