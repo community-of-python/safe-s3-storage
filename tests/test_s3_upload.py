@@ -18,7 +18,7 @@ class TestS3Upload:
         uploaded_file: typing.Final = await S3FilesUploader(
             file_validator=FileValidator(allowed_mime_types=[MIME_OCTET_STREAM]),
             s3_client=s3_client_mock,
-            s3_bucket_name=bucket_name,
+            bucket_name=bucket_name,
         ).upload_file(file_name=file_name, file_content=file_content)
 
         assert uploaded_file == UploadedFile(
@@ -45,7 +45,7 @@ class TestS3Upload:
         uploaded_file: typing.Final = await S3FilesUploader(
             file_validator=FileValidator(allowed_mime_types=[MIME_OCTET_STREAM]),
             s3_client=s3_client_mock,
-            s3_bucket_name=bucket_name,
+            bucket_name=bucket_name,
             s3_key_generator=lambda file_context: file_name_prefix + file_context.file_name,
         ).upload_file(file_name=file_name, file_content=generate_binary_content(faker))
 
@@ -60,7 +60,7 @@ class TestS3Upload:
         await S3FilesUploader(
             file_validator=FileValidator(allowed_mime_types=[MIME_OCTET_STREAM]),
             s3_client=s3_client_mock,
-            s3_bucket_name=faker.pystr(),
+            bucket_name=faker.pystr(),
             s3_metadata_generator=lambda file_context: {file_original_name_key: file_context.file_name},
         ).upload_file(file_name=file_name, file_content=generate_binary_content(faker))
 

@@ -30,9 +30,9 @@ class S3FilesUploader(BaseS3Service):
         )
         s3_key: typing.Final = self.s3_key_generator(validated_file)
 
-        await stamina.retry(on=botocore.exceptions.BotoCoreError, attempts=self.s3_retries)(self.s3_client.put_object)(
+        await stamina.retry(on=botocore.exceptions.BotoCoreError, attempts=self.max_retries)(self.s3_client.put_object)(
             Body=validated_file.file_content,
-            Bucket=self.s3_bucket_name,
+            Bucket=self.bucket_name,
             Key=s3_key,
             ContentType=validated_file.mime_type,
             Metadata=self.s3_metadata_generator(validated_file),
@@ -43,5 +43,5 @@ class S3FilesUploader(BaseS3Service):
             file_name=validated_file.file_name,
             file_size=validated_file.file_size,
             mime_type=validated_file.mime_type,
-            s3_path=f"{self.s3_bucket_name}/{s3_key}",
+            s3_path=f"{self.bucket_name}/{s3_key}",
         )
