@@ -58,7 +58,7 @@ def get_mocked_kaspersky_scan_engine_client(*, faker: faker.Faker, ok_response: 
 
 class TestFileValidator:
     async def test_fails_to_validate_mime_type(self, faker: faker.Faker) -> None:
-        with pytest.raises(exceptions.UnsupportedMimeTypeError):
+        with pytest.raises(exceptions.UnsupportedContentTypeError):
             await FileValidator(allowed_mime_types=["image/jpeg"]).validate_file(
                 file_name=faker.file_name(), file_content=generate_binary_content(faker)
             )
