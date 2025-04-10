@@ -32,7 +32,6 @@ class KasperskyScanEngineResponse(pydantic.BaseModel):
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class KasperskyScanEngineClient:
     httpx_client: httpx.AsyncClient
-
     service_url: str
     timeout_field_ms: int = 10000
     max_retries: int = 3
