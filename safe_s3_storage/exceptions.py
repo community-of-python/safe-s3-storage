@@ -14,7 +14,7 @@ class ThreatDetectedError(BaseError):
 
 
 @dataclasses.dataclass
-class UnsupportedContentTypeError(BaseError):
+class NotAllowedContentTypeError(BaseError):
     file_name: str
     mime_type: str
     allowed_mime_types: list[str]
