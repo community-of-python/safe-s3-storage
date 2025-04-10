@@ -22,7 +22,7 @@ dependencies = [
     "pydantic",
     "pyvips",
     "pyvips-binary",
-    "puremagic>=1.28",
+    "puremagic",
 ]
 
 [dependency-groups]
