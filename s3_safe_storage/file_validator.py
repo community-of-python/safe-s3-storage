@@ -6,7 +6,7 @@ import magic
 import pyvips  # type: ignore[import-untyped]
 
 from s3_safe_storage.exceptions import FailedToConvertImageError, TooLargeFileError, UnsupportedMimeTypeError
-from s3_safe_storage.kaspersky_scan_engine_client import KasperskyScanEngineClient
+from s3_safe_storage.kaspersky_scan_engine import KasperskyScanEngineClient
 
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
@@ -47,7 +47,7 @@ class _ImageConversionResult:
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class FileValidator:
-    kaspersky_scan_engine_client: KasperskyScanEngineClient | None = None
+    kaspersky_scan_engine_client: KasperskyScanEngineClient | None
     image_conversion_mime_type: ImageConversionFormat = ImageConversionFormat.webp
     allowed_mime_types: list[str]
     max_file_size_bytes: int
