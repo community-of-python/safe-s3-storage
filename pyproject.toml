@@ -14,7 +14,13 @@ classifiers = [
 authors = [{ name = "community-of-python" }]
 dynamic = ["version"]
 requires-python = ">=3.12"
-dependencies = ["httpx", "aioboto3", "types-aioboto3[s3]", "stamina"]
+dependencies = [
+    "httpx",
+    "aioboto3",
+    "types-aioboto3[s3]",
+    "stamina",
+    "pydantic",
+]
 
 [dependency-groups]
 dev = ["anyio", "faker", "pytest", "pytest-cov"]
