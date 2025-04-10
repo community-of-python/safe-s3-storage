@@ -117,15 +117,30 @@ class TestFileValidator:
             allowed_mime_types=["image/png"],
         ).validate_file(file_name=faker.file_name(), file_content=png_file)
 
-    async def test_antivirus_fails(self, faker: faker.Faker) -> None:
+    async def test_antivirus_fails_on_files(self, faker: faker.Faker) -> None:
         with pytest.raises(exceptions.ThreatDetectedError):
             await FileValidator(
                 kaspersky_scan_engine=get_mocked_kaspersky_scan_engine_client(faker=faker, ok_response=False),
                 allowed_mime_types=[MIME_OCTET_STREAM],
             ).validate_file(file_name=faker.file_name(), file_content=generate_binary_content(faker))
 
-    async def test_antivirus_passes(self, faker: faker.Faker) -> None:
+    async def test_antivirus_fails_on_images(self, faker: faker.Faker, png_file: bytes) -> None:
+        with pytest.raises(exceptions.ThreatDetectedError):
+            await FileValidator(
+                kaspersky_scan_engine=get_mocked_kaspersky_scan_engine_client(faker=faker, ok_response=False),
+                scan_images_with_antivirus=True,
+                allowed_mime_types=["image/png"],
+            ).validate_file(file_name=faker.file_name(), file_content=png_file)
+
+    async def test_antivirus_passes_on_files(self, faker: faker.Faker) -> None:
         await FileValidator(
             kaspersky_scan_engine=get_mocked_kaspersky_scan_engine_client(faker=faker, ok_response=True),
             allowed_mime_types=[MIME_OCTET_STREAM],
         ).validate_file(file_name=faker.file_name(), file_content=generate_binary_content(faker))
+
+    async def test_antivirus_passes_on_images(self, faker: faker.Faker, png_file: bytes) -> None:
+        await FileValidator(
+            kaspersky_scan_engine=get_mocked_kaspersky_scan_engine_client(faker=faker, ok_response=True),
+            scan_images_with_antivirus=True,
+            allowed_mime_types=["image/png"],
+        ).validate_file(file_name=faker.file_name(), file_content=png_file)
