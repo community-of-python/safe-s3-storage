@@ -98,15 +98,14 @@ class TestFileValidator:
         assert validated_file.mime_type == image_conversion_mime_type
 
     #  TODO: test with output png image just for sure
-    @pytest.mark.parametrize("image_conversion_mime_type", list(ImageConversionFormat))
-    async def test_ok_not_image(self, faker: faker.Faker, image_conversion_mime_type: ImageConversionFormat) -> None:
+    async def test_ok_not_image(self, faker: faker.Faker) -> None:
         mime_type = "application/octet-stream"
         file_name = faker.file_name()
         file_content = generate_binary_content(faker)
 
-        validated_file = await FileValidator(
-            allowed_mime_types=[mime_type], image_conversion_mime_type=image_conversion_mime_type
-        ).validate_file(file_name=file_name, file_content=file_content)
+        validated_file = await FileValidator(allowed_mime_types=[mime_type]).validate_file(
+            file_name=file_name, file_content=file_content
+        )
 
         assert validated_file.file_name == file_name
         assert validated_file.file_content == file_content
