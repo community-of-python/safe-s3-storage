@@ -6,7 +6,7 @@ import botocore
 import botocore.exceptions
 import httpx
 import magic
-import pyvips
+import pyvips  # type: ignore[import-untyped]
 import stamina
 from types_aiobotocore_s3 import S3Client
 
