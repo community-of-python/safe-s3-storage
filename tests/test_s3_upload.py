@@ -3,8 +3,8 @@ from unittest import mock
 
 import faker
 
-from s3_safe_storage.file_validator import FileValidator
-from s3_safe_storage.s3_upload import S3FilesUploader, UploadedFile
+from safe_s3_storage.file_validator import FileValidator
+from safe_s3_storage.s3_upload import S3FilesUploader, UploadedFile
 from tests.conftest import MIME_OCTET_STREAM, generate_binary_content
 
 

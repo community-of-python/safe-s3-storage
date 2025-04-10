@@ -7,7 +7,7 @@ import httpx
 import pydantic
 import stamina
 
-from s3_safe_storage.exceptions import ThreatDetectedError
+from safe_s3_storage.exceptions import ThreatDetectedError
 
 
 class KasperskyScanEngineRequest(pydantic.BaseModel):

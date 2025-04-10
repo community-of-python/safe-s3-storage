@@ -5,8 +5,8 @@ import botocore
 import botocore.exceptions
 import stamina
 
-from s3_safe_storage.file_validator import FileValidator, ValidatedFile
-from s3_safe_storage.s3_base import BaseS3Service
+from safe_s3_storage.file_validator import FileValidator, ValidatedFile
+from safe_s3_storage.s3_base import BaseS3Service
 
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)

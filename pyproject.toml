@@ -1,5 +1,5 @@
 [project]
-name = "s3-safe-storage"
+name = "safe-s3-storage"
 description = "S3 safe storage"
 readme = "README.md"
 keywords = ["s3", "kaspersky", "antivirus", "upload"]

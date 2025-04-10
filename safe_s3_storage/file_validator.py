@@ -5,8 +5,8 @@ import typing
 import magic
 import pyvips  # type: ignore[import-untyped]
 
-from s3_safe_storage.exceptions import FailedToConvertImageError, TooLargeFileError, UnsupportedMimeTypeError
-from s3_safe_storage.kaspersky_scan_engine import KasperskyScanEngineClient
+from safe_s3_storage.exceptions import FailedToConvertImageError, TooLargeFileError, UnsupportedMimeTypeError
+from safe_s3_storage.kaspersky_scan_engine import KasperskyScanEngineClient
 
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)

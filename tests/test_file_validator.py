@@ -5,9 +5,9 @@ import faker
 import httpx
 import pytest
 
-from s3_safe_storage import exceptions
-from s3_safe_storage.file_validator import FileValidator, ImageConversionMimeType
-from s3_safe_storage.kaspersky_scan_engine import (
+from safe_s3_storage import exceptions
+from safe_s3_storage.file_validator import FileValidator, ImageConversionMimeType
+from safe_s3_storage.kaspersky_scan_engine import (
     KasperskyScanEngineClient,
     KasperskyScanEngineResponse,
     KasperskyScanEngineScanResult,
