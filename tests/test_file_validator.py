@@ -120,14 +120,14 @@ class TestFileValidator:
         ).validate_file(file_name=faker.file_name(), file_content=png_file)
 
     async def test_antivirus_fails_on_files(self, faker: faker.Faker) -> None:
-        with pytest.raises(exceptions.ThreatDetectedError):
+        with pytest.raises(exceptions.KasperskyScanEngineThreatDetectedError):
             await FileValidator(
                 kaspersky_scan_engine=get_mocked_kaspersky_scan_engine_client(faker=faker, ok_response=False),
                 allowed_mime_types=[MIME_OCTET_STREAM],
             ).validate_file(file_name=faker.file_name(), file_content=generate_binary_content(faker))
 
     async def test_antivirus_fails_on_images(self, faker: faker.Faker, png_file: bytes) -> None:
-        with pytest.raises(exceptions.ThreatDetectedError):
+        with pytest.raises(exceptions.KasperskyScanEngineThreatDetectedError):
             await FileValidator(
                 kaspersky_scan_engine=get_mocked_kaspersky_scan_engine_client(faker=faker, ok_response=False),
                 allowed_mime_types=["image/png"],

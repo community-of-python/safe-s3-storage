@@ -7,7 +7,7 @@ import httpx
 import pydantic
 import stamina
 
-from safe_s3_storage.exceptions import ThreatDetectedError
+from safe_s3_storage.exceptions import KasperskyScanEngineThreatDetectedError
 
 
 class KasperskyScanEngineRequest(pydantic.BaseModel):
@@ -52,4 +52,4 @@ class KasperskyScanEngineClient:
         )(payload)
         validated_response: typing.Final = KasperskyScanEngineResponse.model_validate_json(response)
         if validated_response.scanResult == KasperskyScanEngineScanResult.DETECT:
-            raise ThreatDetectedError(antivirus_response=response, file_name=file_name)
+            raise KasperskyScanEngineThreatDetectedError(response=response, file_name=file_name)

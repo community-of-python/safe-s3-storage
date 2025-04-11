@@ -8,8 +8,8 @@ class BaseError(Exception):
 
 
 @dataclasses.dataclass
-class ThreatDetectedError(BaseError):
-    antivirus_response: bytes
+class KasperskyScanEngineThreatDetectedError(BaseError):
+    response: bytes
     file_name: str
 
 
