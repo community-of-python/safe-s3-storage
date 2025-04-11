@@ -15,7 +15,7 @@ class UploadedFile(ValidatedFile):
 
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
-class S3FilesUploader(BaseS3Service):
+class SafeS3FilesUploader(BaseS3Service):
     file_validator: FileValidator
     s3_key_generator: typing.Callable[[ValidatedFile], str] = lambda file_context: file_context.file_name
     s3_metadata_generator: typing.Callable[[ValidatedFile], typing.Mapping[str, str]] = lambda _file_context: {}

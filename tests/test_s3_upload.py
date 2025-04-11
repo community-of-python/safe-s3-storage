@@ -4,18 +4,18 @@ from unittest import mock
 import faker
 
 from safe_s3_storage.file_validator import FileValidator
-from safe_s3_storage.s3_upload import S3FilesUploader, UploadedFile
+from safe_s3_storage.s3_upload import SafeS3FilesUploader, UploadedFile
 from tests.conftest import MIME_OCTET_STREAM, generate_binary_content
 
 
-class TestS3Upload:
+class TestSafeS3FilesUploader:
     async def test_ok_with_defaults(self, faker: faker.Faker) -> None:
         s3_client_mock: typing.Final = mock.AsyncMock()
         file_name: typing.Final = faker.file_name()
         bucket_name: typing.Final = faker.pystr()
         file_content: typing.Final = generate_binary_content(faker)
 
-        uploaded_file: typing.Final = await S3FilesUploader(
+        uploaded_file: typing.Final = await SafeS3FilesUploader(
             file_validator=FileValidator(allowed_mime_types=[MIME_OCTET_STREAM]),
             s3_client=s3_client_mock,
             bucket_name=bucket_name,
@@ -42,7 +42,7 @@ class TestS3Upload:
         file_name_prefix: typing.Final = faker.pystr()
         bucket_name: typing.Final = faker.pystr()
 
-        uploaded_file: typing.Final = await S3FilesUploader(
+        uploaded_file: typing.Final = await SafeS3FilesUploader(
             file_validator=FileValidator(allowed_mime_types=[MIME_OCTET_STREAM]),
             s3_client=s3_client_mock,
             bucket_name=bucket_name,
@@ -57,7 +57,7 @@ class TestS3Upload:
         file_name: typing.Final = faker.file_name()
         file_original_name_key: typing.Final = faker.pystr()
 
-        await S3FilesUploader(
+        await SafeS3FilesUploader(
             file_validator=FileValidator(allowed_mime_types=[MIME_OCTET_STREAM]),
             s3_client=s3_client_mock,
             bucket_name=faker.pystr(),
