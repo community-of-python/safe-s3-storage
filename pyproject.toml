@@ -1,0 +1,77 @@
+[project]
+name = "safe-s3-storage"
+description = "S3 safe storage"
+readme = "README.md"
+keywords = ["s3", "kaspersky", "antivirus", "upload"]
+classifiers = [
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Communications :: File Sharing",
+    "Typing :: Typed",
+]
+authors = [{ name = "community-of-python" }]
+dynamic = ["version"]
+requires-python = ">=3.12"
+dependencies = [
+    "httpx",
+    "aioboto3",
+    "types-aioboto3[s3]",
+    "stamina",
+    "pydantic",
+    "pyvips",
+    "pyvips-binary",
+    "puremagic",
+]
+
+[dependency-groups]
+dev = ["anyio", "faker", "pytest", "pytest-cov"]
+lint = [{ include-group = "dev" }, "auto-typing-final", "mypy", "ruff"]
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.ruff]
+fix = true
+unsafe-fixes = true
+line-length = 120
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "EM",
+    "FBT",
+    "TRY003",
+    "D1",
+    "D203",
+    "D213",
+    "G004",
+    "FA",
+    "COM812",
+    "ISC001",
+]
+
+[tool.ruff.lint.isort]
+no-lines-before = ["standard-library", "local-folder"]
+known-third-party = []
+known-local-folder = []
+lines-after-imports = 2
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/*.py" = ["S101", "S311"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=."
+
+[tool.coverage.report]
+skip_covered = true
+show_missing = true
+exclude_also = ["if typing.TYPE_CHECKING:"]
