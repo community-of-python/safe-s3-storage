@@ -36,7 +36,7 @@ def _split_file_base_name_and_extensions(file_name: str) -> tuple[str, str | Non
 class FileValidator:
     kaspersky_scan_engine: KasperskyScanEngineClient | None = None
     allowed_mime_types: list[str]
-    scan_images_with_antivirus: bool = False
+    scan_images_with_antivirus: bool = True
     max_file_size_bytes: int = 10 * 1024 * 1024  # 10 MB
     max_image_size_bytes: int = 50 * 1024 * 1024  # 50 MB
     image_conversion_format: ImageConversionFormat = ImageConversionFormat.webp

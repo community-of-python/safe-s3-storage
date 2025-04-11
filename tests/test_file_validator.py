@@ -115,6 +115,7 @@ class TestFileValidator:
     async def test_antivirus_skips_images(self, faker: faker.Faker, png_file: bytes, ok_response: bool) -> None:
         await FileValidator(
             kaspersky_scan_engine=get_mocked_kaspersky_scan_engine_client(faker=faker, ok_response=ok_response),
+            scan_images_with_antivirus=False,
             allowed_mime_types=["image/png"],
         ).validate_file(file_name=faker.file_name(), file_content=png_file)
 
@@ -129,7 +130,6 @@ class TestFileValidator:
         with pytest.raises(exceptions.ThreatDetectedError):
             await FileValidator(
                 kaspersky_scan_engine=get_mocked_kaspersky_scan_engine_client(faker=faker, ok_response=False),
-                scan_images_with_antivirus=True,
                 allowed_mime_types=["image/png"],
             ).validate_file(file_name=faker.file_name(), file_content=png_file)
 
@@ -142,6 +142,5 @@ class TestFileValidator:
     async def test_antivirus_passes_on_images(self, faker: faker.Faker, png_file: bytes) -> None:
         await FileValidator(
             kaspersky_scan_engine=get_mocked_kaspersky_scan_engine_client(faker=faker, ok_response=True),
-            scan_images_with_antivirus=True,
             allowed_mime_types=["image/png"],
         ).validate_file(file_name=faker.file_name(), file_content=png_file)
