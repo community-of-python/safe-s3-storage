@@ -2,7 +2,9 @@ import typing
 from unittest import mock
 
 import faker
+import pytest
 
+from safe_s3_storage.exceptions import InvalidS3PathError
 from safe_s3_storage.s3_service import SafeS3FilesService
 from tests.conftest import generate_binary_content
 
@@ -42,3 +44,7 @@ class TestSafeS3FilesReader:
 
         s3_client_mock.get_object.assert_called_once_with(Bucket=bucket_name, Key=s3_key)
         assert read_chunks == file_content_chunks
+
+    async def test_fails_to_parse_s3_path(self, faker: faker.Faker) -> None:
+        with pytest.raises(InvalidS3PathError):
+            await SafeS3FilesService(s3_client=mock.Mock(), file_validator=mock.Mock()).read_file(s3_path=faker.pystr())
