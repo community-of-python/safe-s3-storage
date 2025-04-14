@@ -18,7 +18,7 @@ class UploadedFile(ValidatedFile):
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class SafeS3FilesReader(BaseS3Service):
     s3_metadata_validator: typing.Callable[[dict[str, str]], bool]
-    read_chunk_size: int
+    read_chunk_size: int = 70 * 1024
 
     async def _retrieve_file_object(self, *, s3_path: str) -> GetObjectOutputTypeDef:
         bucket_name, object_key = extract_bucket_name_and_object_key(s3_path)
