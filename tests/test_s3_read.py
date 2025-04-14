@@ -3,7 +3,7 @@ from unittest import mock
 
 import faker
 
-from safe_s3_storage.s3_read import SafeS3FilesReader
+from safe_s3_storage.s3_service import SafeS3FilesService
 from tests.conftest import generate_binary_content
 
 
@@ -15,9 +15,9 @@ class TestSafeS3FilesReader:
             get_object=mock.AsyncMock(return_value={"Body": mock.Mock(read=mock.AsyncMock(return_value=file_content))})
         )
 
-        read_file: typing.Final = await SafeS3FilesReader(s3_client=s3_client_mock).read_file(
-            s3_path=f"{bucket_name}/{s3_key}"
-        )
+        read_file: typing.Final = await SafeS3FilesService(
+            s3_client=s3_client_mock, file_validator=mock.Mock()
+        ).read_file(s3_path=f"{bucket_name}/{s3_key}")
 
         s3_client_mock.get_object.assert_called_once_with(Bucket=bucket_name, Key=s3_key)
         assert read_file == file_content
@@ -35,7 +35,7 @@ class TestSafeS3FilesReader:
 
         read_chunks: typing.Final = [
             one_chunk
-            async for one_chunk in SafeS3FilesReader(s3_client=s3_client_mock).stream_file(
+            async for one_chunk in SafeS3FilesService(s3_client=s3_client_mock, file_validator=mock.Mock()).stream_file(
                 s3_path=f"{bucket_name}/{s3_key}"
             )
         ]
