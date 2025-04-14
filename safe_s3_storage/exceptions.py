@@ -31,3 +31,7 @@ class TooLargeFileError(BaseError):
 class FailedToConvertImageError(BaseError):
     file_name: str
     mime_type: str
+
+@dataclasses.dataclass
+class InvalidS3PathError(BaseError):
+    s3_path: str
