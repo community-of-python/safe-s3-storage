@@ -15,7 +15,7 @@ class UploadedFile(ValidatedFile):
     s3_path: str
 
 
-@dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
+@dataclasses.dataclass(kw_only=True, frozen=True)
 class SafeS3FilesReader(BaseS3Service):
     s3_metadata_validator: typing.Callable[[dict[str, str]], bool]
     read_chunk_size: int = 70 * 1024

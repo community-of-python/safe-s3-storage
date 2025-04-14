@@ -6,7 +6,7 @@ from types_aiobotocore_s3 import S3Client
 from safe_s3_storage.exceptions import InvalidS3PathError
 
 
-@dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
+@dataclasses.dataclass(kw_only=True, frozen=True)
 class BaseS3Service:
     s3_client: S3Client
     max_retries: int = 3
