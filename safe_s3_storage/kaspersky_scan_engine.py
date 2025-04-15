@@ -18,12 +18,12 @@ class KasperskyScanEngineRequest(pydantic.BaseModel):
 
 # https://support.kaspersky.ru/scan-engine/2.1/193001
 class KasperskyScanEngineScanResult(enum.StrEnum):
-    CLEAN = enum.auto()
-    DETECT = enum.auto()
-    DISINFECTED = enum.auto()
-    DELETED = enum.auto()
-    NON_SCANNED = enum.auto()
-    SERVER_ERROR = enum.auto()
+    CLEAN = "CLEAN"
+    DETECT = "DETECT"
+    DISINFECTED = "DISINFECTED"
+    DELETED = "DELETED"
+    NON_SCANNED = "NON_SCANNED"
+    SERVER_ERROR = "SERVER_ERROR"
 
 
 class KasperskyScanEngineResponse(pydantic.BaseModel):
