@@ -23,6 +23,7 @@ class NotAllowedMimeTypeError(BaseError):
 @dataclasses.dataclass
 class TooLargeFileError(BaseError):
     file_name: str
+    file_size: int
     mime_type: str
     max_size: int
 
