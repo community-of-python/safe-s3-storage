@@ -63,7 +63,9 @@ class FileValidator:
         content_size: typing.Final = len(file_content)
         max_size: typing.Final = self.max_image_size_bytes if _is_image(mime_type) else self.max_file_size_bytes
         if content_size > max_size:
-            raise exceptions.TooLargeFileError(file_name=file_name, mime_type=mime_type, max_size=max_size)
+            raise exceptions.TooLargeFileError(
+                file_name=file_name, file_size=content_size, mime_type=mime_type, max_size=max_size
+            )
         return content_size
 
     def _convert_image(self, validated_file: ValidatedFile) -> ValidatedFile:
