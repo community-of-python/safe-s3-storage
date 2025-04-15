@@ -5,11 +5,11 @@ import faker
 import pytest
 
 from safe_s3_storage.exceptions import InvalidS3PathError
-from safe_s3_storage.s3_service import SafeS3FilesService
+from safe_s3_storage.s3_service import S3Service
 from tests.conftest import generate_binary_content
 
 
-class TestSafeS3FilesReader:
+class TestS3ServiceRead:
     async def test_ok_read(self, faker: faker.Faker) -> None:
         file_content: typing.Final = generate_binary_content(faker)
         bucket_name, s3_key = faker.pystr(), faker.pystr()
@@ -17,9 +17,7 @@ class TestSafeS3FilesReader:
             get_object=mock.AsyncMock(return_value={"Body": mock.Mock(read=mock.AsyncMock(return_value=file_content))})
         )
 
-        read_file: typing.Final = await SafeS3FilesService(
-            s3_client=s3_client_mock, file_validator=mock.Mock()
-        ).read_file(s3_path=f"{bucket_name}/{s3_key}")
+        read_file: typing.Final = await S3Service(s3_client=s3_client_mock).read_file(s3_path=f"{bucket_name}/{s3_key}")
 
         s3_client_mock.get_object.assert_called_once_with(Bucket=bucket_name, Key=s3_key)
         assert read_file == file_content
@@ -37,9 +35,7 @@ class TestSafeS3FilesReader:
 
         read_chunks: typing.Final = [
             one_chunk
-            async for one_chunk in SafeS3FilesService(s3_client=s3_client_mock, file_validator=mock.Mock()).stream_file(
-                s3_path=f"{bucket_name}/{s3_key}"
-            )
+            async for one_chunk in S3Service(s3_client=s3_client_mock).stream_file(s3_path=f"{bucket_name}/{s3_key}")
         ]
 
         s3_client_mock.get_object.assert_called_once_with(Bucket=bucket_name, Key=s3_key)
@@ -47,4 +43,4 @@ class TestSafeS3FilesReader:
 
     async def test_fails_to_parse_s3_path(self, faker: faker.Faker) -> None:
         with pytest.raises(InvalidS3PathError):
-            await SafeS3FilesService(s3_client=mock.Mock(), file_validator=mock.Mock()).read_file(s3_path=faker.pystr())
+            await S3Service(s3_client=mock.Mock()).read_file(s3_path=faker.pystr())
