@@ -6,7 +6,11 @@ import httpx
 import pytest
 
 from safe_s3_storage import exceptions
-from safe_s3_storage.file_validator import FileValidator, ImageConversionFormat
+from safe_s3_storage.file_validator import (
+    _IMAGE_CONVERSION_FORMAT_TO_MIME_TYPE_AND_EXTENSION_MAP,
+    FileValidator,
+    ImageConversionFormat,
+)
 from safe_s3_storage.kaspersky_scan_engine import (
     KasperskyScanEngineClient,
     KasperskyScanEngineResponse,
@@ -92,10 +96,16 @@ class TestFileValidator:
             allowed_mime_types=["image/png"], image_conversion_format=image_conversion_format
         ).validate_file(file_name=f"{file_base_name}.{faker.file_extension()}", file_content=png_file)
 
-        assert validated_file.file_name == f"{file_base_name}.{image_conversion_format.value[1]}"
+        assert (
+            validated_file.file_name
+            == f"{file_base_name}.{_IMAGE_CONVERSION_FORMAT_TO_MIME_TYPE_AND_EXTENSION_MAP[image_conversion_format][1]}"
+        )
         assert validated_file.file_content != png_file
         assert validated_file.file_size == len(validated_file.file_content)
-        assert validated_file.mime_type == image_conversion_format.value[0]
+        assert (
+            validated_file.mime_type
+            == _IMAGE_CONVERSION_FORMAT_TO_MIME_TYPE_AND_EXTENSION_MAP[image_conversion_format][0]
+        )
 
     @pytest.mark.parametrize("binary", [True, False])
     async def test_ok_not_image(self, faker: faker.Faker, binary: bool) -> None:

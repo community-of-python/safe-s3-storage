@@ -21,10 +21,15 @@ def _is_image(mime_type: str) -> bool:
     return mime_type.startswith("image/")
 
 
-class ImageConversionFormat(enum.Enum):
-    # mime type, file extension
-    jpeg = ("image/jpeg", "jpg")
-    webp = ("image/webp", "webp")
+class ImageConversionFormat(enum.StrEnum):
+    jpeg = enum.auto()
+    webp = enum.auto()
+
+
+_IMAGE_CONVERSION_FORMAT_TO_MIME_TYPE_AND_EXTENSION_MAP: typing.Final = {
+    ImageConversionFormat.jpeg: ("image/jpeg", "jpg"),
+    ImageConversionFormat.webp: ("image/webp", "webp"),
+}
 
 
 def _split_file_base_name_and_extensions(file_name: str) -> tuple[str, str | None]:
@@ -72,13 +77,17 @@ class FileValidator:
         if not _is_image(validated_file.mime_type):
             return validated_file
 
+        target_mime_type, target_extension = _IMAGE_CONVERSION_FORMAT_TO_MIME_TYPE_AND_EXTENSION_MAP[
+            self.image_conversion_format
+        ]
+
         try:
             pyvips_image: typing.Final[pyvips.Image] = pyvips.Image.new_from_buffer(
                 validated_file.file_content, options=""
             )
             new_file_content: typing.Final = typing.cast(
                 "bytes",
-                pyvips_image.write_to_buffer(f".{self.image_conversion_format.value[1]}", Q=self.image_quality),
+                pyvips_image.write_to_buffer(f".{target_extension}", Q=self.image_quality),
             )
         except pyvips.Error as pyvips_error:
             raise exceptions.FailedToConvertImageError(
@@ -87,10 +96,10 @@ class FileValidator:
 
         file_base_name, _file_extension = _split_file_base_name_and_extensions(validated_file.file_name)
         return ValidatedFile(
-            file_name=f"{file_base_name}.{self.image_conversion_format.value[1]}",
+            file_name=f"{file_base_name}.{target_extension}",
             file_content=new_file_content,
             file_size=len(new_file_content),
-            mime_type=self.image_conversion_format.value[0],
+            mime_type=target_mime_type,
         )
 
     async def validate_file(self, *, file_name: str, file_content: bytes) -> ValidatedFile:
