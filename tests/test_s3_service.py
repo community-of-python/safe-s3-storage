@@ -120,11 +120,14 @@ class TestS3ServiceCreateFileUrl:
 
         assert file_url == presigned_url
 
-    async def test_returns_ok_with_proxy(self, faker: faker.Faker) -> None:
-        endpoint_url, proxy_base_url = "http://s3", "https://s3-proxy.me.com"
+    @pytest.mark.parametrize("endpoint_url", ["http://s3", "http://s3/"])
+    @pytest.mark.parametrize("proxy_base_url", ["https://s3-proxy.me.com", "https://s3-proxy.me.com/"])
+    async def test_returns_ok_with_proxy(self, faker: faker.Faker, endpoint_url: str, proxy_base_url: str) -> None:
         presigned_url_path: typing.Final = faker.pystr()
         s3_client_mock: typing.Final = mock.Mock(
-            generate_presigned_url=mock.AsyncMock(return_value=f"{endpoint_url}/{presigned_url_path}"),
+            generate_presigned_url=mock.AsyncMock(
+                return_value=f"{endpoint_url.removesuffix('/')}/{presigned_url_path}"
+            ),
             meta=mock.Mock(endpoint_url=endpoint_url),
         )
 
@@ -135,7 +138,7 @@ class TestS3ServiceCreateFileUrl:
             proxy_base_url=proxy_base_url,
         )
 
-        assert file_url == f"{proxy_base_url}/{presigned_url_path}"
+        assert file_url == f"{proxy_base_url.removesuffix('/')}/{presigned_url_path}"
 
     async def test_fails_with_proxy(self, faker: faker.Faker) -> None:
         presigned_url_path: typing.Final = faker.pystr()
