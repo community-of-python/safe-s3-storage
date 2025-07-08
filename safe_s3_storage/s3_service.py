@@ -84,9 +84,11 @@ class S3Service:
         if proxy_base_url is None:
             return presigned_url
         if presigned_url == (
-            presigned_url_without_prefix := presigned_url.removeprefix(self.s3_client.meta.endpoint_url)
+            presigned_url_without_prefix := presigned_url.removeprefix(
+                self.s3_client.meta.endpoint_url.removesuffix("/")
+            )
         ):
             raise FailedToReplaceS3BaseUrlWithProxyBaseUrlError(
                 s3_file_presigned_url=presigned_url, proxy_base_url=proxy_base_url
             )
-        return proxy_base_url + presigned_url_without_prefix
+        return proxy_base_url.removesuffix("/") + presigned_url_without_prefix
