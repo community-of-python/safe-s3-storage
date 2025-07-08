@@ -37,3 +37,9 @@ class FailedToConvertImageError(BaseError):
 @dataclasses.dataclass
 class InvalidS3PathError(BaseError):
     s3_path: str
+
+
+@dataclasses.dataclass
+class FailedToReplaceS3BaseUrlWithProxyBaseUrlError(BaseError):
+    s3_file_presigned_url: str
+    proxy_base_url: str
