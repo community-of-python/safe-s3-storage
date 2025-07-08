@@ -1,10 +1,11 @@
+import datetime
 import typing
 from unittest import mock
 
 import faker
 import pytest
 
-from safe_s3_storage.exceptions import InvalidS3PathError
+from safe_s3_storage.exceptions import FailedToReplaceS3BaseUrlWithProxyBaseUrlError, InvalidS3PathError
 from safe_s3_storage.file_validator import FileValidator
 from safe_s3_storage.s3_service import S3Service, UploadedFile
 from tests.conftest import MIME_OCTET_STREAM, generate_binary_content
@@ -79,3 +80,74 @@ class TestS3ServiceRead:
     async def test_fails_to_parse_s3_path(self, faker: faker.Faker) -> None:
         with pytest.raises(InvalidS3PathError):
             await S3Service(s3_client=mock.Mock()).read_file(s3_path=faker.pystr())
+
+
+class TestS3ServiceCreateFileUrl:
+    async def test_call(self, faker: faker.Faker) -> None:
+        bucket_name, s3_key, display_file_name = faker.pystr(), faker.pystr(), faker.pystr()
+        presigned_url: typing.Final = faker.url()
+        expires_in_seconds: typing.Final = faker.pyint(min_value=1)
+        s3_client_mock: typing.Final = mock.Mock(generate_presigned_url=mock.AsyncMock(return_value=presigned_url))
+
+        await S3Service(s3_client=s3_client_mock).create_file_url(
+            s3_path=f"{bucket_name}/{s3_key}",
+            display_file_name=display_file_name,
+            expires_in=datetime.timedelta(seconds=expires_in_seconds),
+        )
+
+        assert s3_client_mock.generate_presigned_url.mock_calls == [
+            mock.call(
+                "get_object",
+                Params={
+                    "Bucket": bucket_name,
+                    "Key": s3_key,
+                    "ResponseContentDisposition": f'inline; filename="{display_file_name}"',
+                    "ResponseCacheControl": f"max-age={expires_in_seconds}, public",
+                },
+                ExpiresIn=expires_in_seconds,
+            )
+        ]
+
+    async def test_returns_ok_without_proxy(self, faker: faker.Faker) -> None:
+        presigned_url: typing.Final = faker.url()
+        s3_client_mock: typing.Final = mock.Mock(generate_presigned_url=mock.AsyncMock(return_value=presigned_url))
+
+        file_url: typing.Final = await S3Service(s3_client=s3_client_mock).create_file_url(
+            s3_path=f"{faker.pystr()}/{faker.pystr()}",
+            display_file_name=faker.pystr(),
+            expires_in=faker.time_delta(),
+        )
+
+        assert file_url == presigned_url
+
+    async def test_returns_ok_with_proxy(self, faker: faker.Faker) -> None:
+        endpoint_url, proxy_base_url = "http://s3", "https://s3-proxy.me.com"
+        presigned_url_path: typing.Final = faker.pystr()
+        s3_client_mock: typing.Final = mock.Mock(
+            generate_presigned_url=mock.AsyncMock(return_value=f"{endpoint_url}/{presigned_url_path}"),
+            meta=mock.Mock(endpoint_url=endpoint_url),
+        )
+
+        file_url: typing.Final = await S3Service(s3_client=s3_client_mock).create_file_url(
+            s3_path=f"{faker.pystr()}/{faker.pystr()}",
+            display_file_name=faker.pystr(),
+            expires_in=faker.time_delta(),
+            proxy_base_url=proxy_base_url,
+        )
+
+        assert file_url == f"{proxy_base_url}/{presigned_url_path}"
+
+    async def test_fails_with_proxy(self, faker: faker.Faker) -> None:
+        presigned_url_path: typing.Final = faker.pystr()
+        s3_client_mock: typing.Final = mock.Mock(
+            generate_presigned_url=mock.AsyncMock(return_value=f"http://not-that-s3/{presigned_url_path}"),
+            meta=mock.Mock(endpoint_url="http://s3"),
+        )
+
+        with pytest.raises(FailedToReplaceS3BaseUrlWithProxyBaseUrlError):
+            await S3Service(s3_client=s3_client_mock).create_file_url(
+                s3_path=f"{faker.pystr()}/{faker.pystr()}",
+                display_file_name=faker.pystr(),
+                expires_in=faker.time_delta(),
+                proxy_base_url=faker.url(),
+            )
