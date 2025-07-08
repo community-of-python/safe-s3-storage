@@ -27,7 +27,6 @@ class UploadedFile(ValidatedFile):
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class S3Service:
     s3_client: S3Client
-    max_retries: int = 3
 
     async def upload_file(
         self,
