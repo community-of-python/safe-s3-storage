@@ -21,7 +21,7 @@ def _is_image(mime_type: str) -> bool:
     return mime_type.startswith("image/")
 
 
-class ImageConversionFormat(enum.StrEnum):
+class ImageConversionFormat(str, enum.Enum):
     jpeg = enum.auto()
     webp = enum.auto()
 

@@ -17,7 +17,7 @@ class KasperskyScanEngineRequest(pydantic.BaseModel):
 
 
 # https://support.kaspersky.ru/scan-engine/2.1/193001
-class KasperskyScanEngineScanResult(enum.StrEnum):
+class KasperskyScanEngineScanResult(str, enum.Enum):
     CLEAN = "CLEAN"
     DETECT = "DETECT"
     DISINFECTED = "DISINFECTED"

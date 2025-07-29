@@ -5,6 +5,7 @@ readme = "README.md"
 keywords = ["s3", "kaspersky", "antivirus", "upload"]
 classifiers = [
     "Natural Language :: English",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries",
@@ -13,7 +14,7 @@ classifiers = [
 ]
 authors = [{ name = "community-of-python" }]
 dynamic = ["version"]
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
     "httpx",
     "aioboto3",
