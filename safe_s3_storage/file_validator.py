@@ -60,6 +60,7 @@ class FileValidator:
                 mime_type = "text/plain"
         if mime_type in self.allowed_mime_types:
             return mime_type
+
         raise exceptions.NotAllowedMimeTypeError(
             file_name=file_name, mime_type=mime_type, allowed_mime_types=self.allowed_mime_types
         )
