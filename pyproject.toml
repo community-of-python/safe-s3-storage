@@ -13,7 +13,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 authors = [{ name = "community-of-python" }]
-dynamic = ["version"]
+version = "0"
 requires-python = ">=3.10"
 dependencies = [
     "httpx",
@@ -31,11 +31,12 @@ dev = ["anyio", "faker", "pytest", "pytest-cov"]
 lint = [{ include-group = "dev" }, "auto-typing-final", "mypy", "ruff"]
 
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
-build-backend = "hatchling.build"
+requires = ["uv_build"]
+build-backend = "uv_build"
 
-[tool.hatch.version]
-source = "vcs"
+[tool.uv.build-backend]
+module-name = "safe_s3_storage"
+module-root = ""
 
 [tool.ruff]
 fix = true
