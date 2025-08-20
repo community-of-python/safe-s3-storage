@@ -27,7 +27,12 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["anyio", "faker", "pytest", "pytest-cov"]
+dev = [
+ "anyio",
+ "faker",
+ "pytest",
+ "pytest-cov",
+]
 lint = [{ include-group = "dev" }, "auto-typing-final", "mypy", "ruff"]
 
 [build-system]
@@ -37,6 +42,13 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "safe_s3_storage"
 module-root = ""
+
+[[tool.uv.index]]
+url = "https://artifactory.raiffeisen.ru/artifactory/api/pypi/remote-pypi/simple"
+
+[[tool.uv.index]]
+url = "https://pypi.org/simple"
+default = true
 
 [tool.ruff]
 fix = true

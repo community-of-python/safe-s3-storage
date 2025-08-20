@@ -4,8 +4,10 @@ import typing
 import faker
 import httpx
 import pytest
+from httpx import codes as status_codes
 
 from safe_s3_storage import exceptions
+from safe_s3_storage.exceptions import KasperskyScanEngineConnectionError
 from safe_s3_storage.file_validator import (
     _IMAGE_CONVERSION_FORMAT_TO_MIME_TYPE_AND_EXTENSION_MAP,
     FileValidator,
@@ -56,7 +58,21 @@ def get_mocked_kaspersky_scan_engine_client(*, faker: faker.Faker, ok_response: 
         service_url=faker.url(schemes=["http"]),
         client_name=faker.pystr(),
         httpx_client=httpx.AsyncClient(
-            transport=httpx.MockTransport(lambda _: httpx.Response(200, json=scan_response.model_dump(mode="json")))
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(status_codes.OK, json=scan_response.model_dump(mode="json"))
+            )
+        ),
+    )
+
+
+def get_mocked_kaspersky_scan_engine_client_bad_response(
+    *, faker: faker.Faker, status_code: int = status_codes.OK
+) -> KasperskyScanEngineClient:
+    return KasperskyScanEngineClient(
+        service_url=faker.url(schemes=["http"]),
+        client_name=faker.pystr(),
+        httpx_client=httpx.AsyncClient(
+            transport=httpx.MockTransport(lambda _: httpx.Response(status_code, json="")),
         ),
     )
 
@@ -85,6 +101,12 @@ class TestFileValidator:
             await FileValidator(allowed_mime_types=["image/png"]).validate_file(
                 file_name=faker.file_name(), file_content=png_file[:50]
             )
+
+    async def test_all_mime_types_allowed(self, faker: faker.Faker) -> None:
+        validated_file: typing.Final = await FileValidator(allowed_mime_types=None).validate_file(
+            file_name=faker.file_name(), file_content=generate_binary_content(faker)
+        )
+        assert validated_file is not None
 
     @pytest.mark.parametrize("image_conversion_format", list(ImageConversionFormat))
     async def test_ok_image(
@@ -154,3 +176,10 @@ class TestFileValidator:
             kaspersky_scan_engine=get_mocked_kaspersky_scan_engine_client(faker=faker, ok_response=True),
             allowed_mime_types=["image/png"],
         ).validate_file(file_name=faker.file_name(), file_content=png_file)
+
+    async def test_antivirus_no_connection(self, faker: faker.Faker, png_file: bytes) -> None:
+        kasper: typing.Final = get_mocked_kaspersky_scan_engine_client_bad_response(
+            faker=faker, status_code=status_codes.GATEWAY_TIMEOUT
+        )
+        with pytest.raises(KasperskyScanEngineConnectionError, match="Cannot connect to antivirus service"):
+            await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)

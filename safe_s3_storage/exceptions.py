@@ -14,6 +14,11 @@ class KasperskyScanEngineThreatDetectedError(BaseError):
 
 
 @dataclasses.dataclass
+class KasperskyScanEngineConnectionError(BaseError):
+    error: str
+
+
+@dataclasses.dataclass
 class NotAllowedMimeTypeError(BaseError):
     file_name: str
     mime_type: str

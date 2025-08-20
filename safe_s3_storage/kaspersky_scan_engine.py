@@ -7,7 +7,7 @@ import httpx
 import pydantic
 import stamina
 
-from safe_s3_storage.exceptions import KasperskyScanEngineThreatDetectedError
+from safe_s3_storage.exceptions import KasperskyScanEngineConnectionError, KasperskyScanEngineThreatDetectedError
 
 
 class KasperskyScanEngineRequest(pydantic.BaseModel):
@@ -47,9 +47,14 @@ class KasperskyScanEngineClient:
         payload: typing.Final = KasperskyScanEngineRequest(
             timeout=str(self.timeout_ms), object=base64.b64encode(file_content).decode(), name=self.client_name
         ).model_dump(mode="json")
-        response: typing.Final = await stamina.retry(on=httpx.HTTPError, attempts=self.max_retries)(
-            self._send_scan_memory_request
-        )(payload)
+        try:
+            # Have to avoid logs on retry, cause it prints the whole file in binary format
+            stamina.instrumentation.set_on_retry_hooks([])
+            response: typing.Final = await stamina.retry(on=httpx.HTTPError, attempts=self.max_retries)(
+                self._send_scan_memory_request
+            )(payload)
+        except httpx.HTTPStatusError as exc:
+            raise KasperskyScanEngineConnectionError(error="Cannot connect to antivirus service") from exc
         validated_response: typing.Final = KasperskyScanEngineResponse.model_validate_json(response)
         if validated_response.scanResult == KasperskyScanEngineScanResult.DETECT:
             raise KasperskyScanEngineThreatDetectedError(response=response, file_name=file_name)
