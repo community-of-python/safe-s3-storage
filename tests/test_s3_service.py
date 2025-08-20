@@ -82,6 +82,24 @@ class TestS3ServiceRead:
             await S3Service(s3_client=mock.Mock()).read_file(s3_path=faker.pystr())
 
 
+class TestS3ServiceDelete:
+    async def test_ok_delete(self, faker: faker.Faker) -> None:
+        bucket_name, s3_key = faker.pystr(), faker.pystr()
+        s3_client_mock: typing.Final = mock.AsyncMock(delete_object=mock.AsyncMock(return_value={}))
+
+        await S3Service(s3_client=s3_client_mock).delete_file(s3_path=f"{bucket_name}/{s3_key}")
+        s3_client_mock.delete_object.assert_called_once_with(Bucket=bucket_name, Key=s3_key)
+
+
+class TestS3ServiceHead:
+    async def test_ok_head(self, faker: faker.Faker) -> None:
+        bucket_name, s3_key = faker.pystr(), faker.pystr()
+        s3_client_mock: typing.Final = mock.AsyncMock(head_object=mock.AsyncMock(return_value={}))
+
+        await S3Service(s3_client=s3_client_mock).collect_file_head(s3_path=f"{bucket_name}/{s3_key}")
+        s3_client_mock.head_object.assert_called_once_with(Bucket=bucket_name, Key=s3_key)
+
+
 class TestS3ServiceCreateFileUrl:
     async def test_call(self, faker: faker.Faker) -> None:
         bucket_name, s3_key, display_file_name = faker.pystr(), faker.pystr(), faker.pystr()
