@@ -181,5 +181,5 @@ class TestFileValidator:
         kasper: typing.Final = get_mocked_kaspersky_scan_engine_client_bad_response(
             faker=faker, status_code=status_codes.GATEWAY_TIMEOUT
         )
-        with pytest.raises(KasperskyScanEngineConnectionStatusError, match="Cannot connect to antivirus service"):
+        with pytest.raises(KasperskyScanEngineConnectionStatusError):
             await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)

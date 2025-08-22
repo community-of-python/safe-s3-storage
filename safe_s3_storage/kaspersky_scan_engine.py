@@ -3,6 +3,8 @@ import dataclasses
 import enum
 import logging
 import typing
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 import httpx
 import pydantic
@@ -11,8 +13,16 @@ import stamina
 from safe_s3_storage.exceptions import KasperskyScanEngineConnectionStatusError, KasperskyScanEngineThreatDetectedError
 
 
-kaspersky_logger = logging.getLogger(__name__)
-kaspersky_logger.setLevel(logging.ERROR)
+@contextmanager
+def suppress_kasper_warnings() -> Iterator[None]:
+    """Temporarily suppress warnings from kasper module."""
+    kaspersky_logger: typing.Final = logging.getLogger(__name__)
+    original_level: typing.Final = kaspersky_logger.level
+    try:
+        kaspersky_logger.setLevel(logging.ERROR)
+        yield
+    finally:
+        kaspersky_logger.setLevel(original_level)
 
 
 class KasperskyScanEngineRequest(pydantic.BaseModel):
@@ -46,7 +56,6 @@ class KasperskyScanEngineClient:
     async def _send_scan_memory_request(self, payload: dict[str, typing.Any]) -> bytes:
         response: typing.Final = await self.httpx_client.post(url=self.service_url, json=payload)
         response.raise_for_status()
-        kaspersky_logger.info("Got response from kasper")
         return response.content
 
     async def scan_memory(self, *, file_name: str, file_content: bytes) -> None:
@@ -54,9 +63,10 @@ class KasperskyScanEngineClient:
             timeout=str(self.timeout_ms), object=base64.b64encode(file_content).decode(), name=self.client_name
         ).model_dump(mode="json")
         try:
-            response: typing.Final = await stamina.retry(on=httpx.HTTPError, attempts=self.max_retries)(
-                self._send_scan_memory_request
-            )(payload)
+            with suppress_kasper_warnings():
+                response: typing.Final = await stamina.retry(on=httpx.HTTPError, attempts=self.max_retries)(
+                    self._send_scan_memory_request
+                )(payload)
         except httpx.HTTPStatusError as exc:
             raise KasperskyScanEngineConnectionStatusError from exc
         validated_response: typing.Final = KasperskyScanEngineResponse.model_validate_json(response)
