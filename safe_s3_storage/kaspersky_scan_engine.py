@@ -3,8 +3,6 @@ import dataclasses
 import enum
 import logging
 import typing
-from collections.abc import Iterator
-from contextlib import contextmanager
 
 import httpx
 import pydantic
@@ -13,16 +11,8 @@ import stamina
 from safe_s3_storage.exceptions import KasperskyScanEngineConnectionStatusError, KasperskyScanEngineThreatDetectedError
 
 
-@contextmanager
-def suppress_kasper_warnings() -> Iterator[None]:
-    """Temporarily suppress warnings from kasper module."""
-    kaspersky_logger: typing.Final = logging.getLogger(__name__)
-    original_level: typing.Final = kaspersky_logger.level
-    try:
-        kaspersky_logger.setLevel(logging.ERROR)
-        yield
-    finally:
-        kaspersky_logger.setLevel(original_level)
+kaspersky_logger: typing.Final = logging.getLogger(__name__)
+kaspersky_logger.setLevel(logging.ERROR)
 
 
 class KasperskyScanEngineRequest(pydantic.BaseModel):
@@ -63,10 +53,9 @@ class KasperskyScanEngineClient:
             timeout=str(self.timeout_ms), object=base64.b64encode(file_content).decode(), name=self.client_name
         ).model_dump(mode="json")
         try:
-            with suppress_kasper_warnings():
-                response: typing.Final = await stamina.retry(on=httpx.HTTPError, attempts=self.max_retries)(
-                    self._send_scan_memory_request
-                )(payload)
+            response: typing.Final = await stamina.retry(on=httpx.HTTPError, attempts=self.max_retries)(
+                self._send_scan_memory_request
+            )(payload)
         except httpx.HTTPStatusError as exc:
             raise KasperskyScanEngineConnectionStatusError from exc
         validated_response: typing.Final = KasperskyScanEngineResponse.model_validate_json(response)
