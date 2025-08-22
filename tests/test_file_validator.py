@@ -7,7 +7,7 @@ import pytest
 from httpx import codes as status_codes
 
 from safe_s3_storage import exceptions
-from safe_s3_storage.exceptions import KasperskyScanEngineConnectionError
+from safe_s3_storage.exceptions import KasperskyScanEngineConnectionStatusError
 from safe_s3_storage.file_validator import (
     _IMAGE_CONVERSION_FORMAT_TO_MIME_TYPE_AND_EXTENSION_MAP,
     FileValidator,
@@ -181,5 +181,5 @@ class TestFileValidator:
         kasper: typing.Final = get_mocked_kaspersky_scan_engine_client_bad_response(
             faker=faker, status_code=status_codes.GATEWAY_TIMEOUT
         )
-        with pytest.raises(KasperskyScanEngineConnectionError, match="Cannot connect to antivirus service"):
+        with pytest.raises(KasperskyScanEngineConnectionStatusError, match="Cannot connect to antivirus service"):
             await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)

@@ -14,8 +14,7 @@ class KasperskyScanEngineThreatDetectedError(BaseError):
 
 
 @dataclasses.dataclass
-class KasperskyScanEngineConnectionError(BaseError):
-    error: str
+class KasperskyScanEngineConnectionStatusError(BaseError): ...
 
 
 @dataclasses.dataclass
