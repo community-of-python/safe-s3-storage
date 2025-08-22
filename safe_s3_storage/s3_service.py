@@ -3,7 +3,7 @@ import datetime
 import typing
 
 from types_aiobotocore_s3 import S3Client
-from types_aiobotocore_s3.type_defs import GetObjectOutputTypeDef
+from types_aiobotocore_s3.type_defs import GetObjectOutputTypeDef, HeadObjectOutputTypeDef
 
 from safe_s3_storage.exceptions import FailedToReplaceS3BaseUrlWithProxyBaseUrlError, InvalidS3PathError
 from safe_s3_storage.file_validator import ValidatedFile
@@ -92,3 +92,12 @@ class S3Service:
                 s3_file_presigned_url=presigned_url, proxy_base_url=proxy_base_url
             )
         return proxy_base_url.removesuffix("/") + presigned_url_without_prefix
+
+    async def delete_file(self, *, s3_path: str) -> bool:
+        bucket_name, object_key = _extract_bucket_name_and_object_key(s3_path)
+        await self.s3_client.delete_object(Bucket=bucket_name, Key=object_key)
+        return True
+
+    async def collect_file_head(self, *, s3_path: str) -> HeadObjectOutputTypeDef:
+        bucket_name, object_key = _extract_bucket_name_and_object_key(s3_path)
+        return await self.s3_client.head_object(Bucket=bucket_name, Key=object_key)

@@ -40,7 +40,7 @@ def _split_file_base_name_and_extensions(file_name: str) -> tuple[str, str | Non
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class FileValidator:
     kaspersky_scan_engine: KasperskyScanEngineClient | None = None
-    allowed_mime_types: list[str]
+    allowed_mime_types: list[str] | None = None
     scan_images_with_antivirus: bool = True
     max_file_size_bytes: int = 10 * 1024 * 1024  # 10 MB
     max_image_size_bytes: int = 50 * 1024 * 1024  # 50 MB
@@ -58,7 +58,7 @@ class FileValidator:
                 mime_type = "application/octet-stream"
             else:
                 mime_type = "text/plain"
-        if mime_type in self.allowed_mime_types:
+        if self.allowed_mime_types is None or mime_type in self.allowed_mime_types:
             return mime_type
 
         raise exceptions.NotAllowedMimeTypeError(
