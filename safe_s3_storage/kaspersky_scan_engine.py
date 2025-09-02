@@ -1,18 +1,12 @@
 import base64
 import dataclasses
 import enum
-import logging
 import typing
 
 import httpx
 import pydantic
-import stamina
 
 from safe_s3_storage.exceptions import KasperskyScanEngineConnectionStatusError, KasperskyScanEngineThreatDetectedError
-
-
-kaspersky_logger: typing.Final = logging.getLogger(__name__)
-kaspersky_logger.setLevel(logging.ERROR)
 
 
 class KasperskyScanEngineRequest(pydantic.BaseModel):
@@ -53,9 +47,7 @@ class KasperskyScanEngineClient:
             timeout=str(self.timeout_ms), object=base64.b64encode(file_content).decode(), name=self.client_name
         ).model_dump(mode="json")
         try:
-            response: typing.Final = await stamina.retry(on=httpx.HTTPError, attempts=self.max_retries)(
-                self._send_scan_memory_request
-            )(payload)
+            response: typing.Final = await self._send_scan_memory_request(payload)
         except httpx.HTTPStatusError as exc:
             raise KasperskyScanEngineConnectionStatusError from exc
         validated_response: typing.Final = KasperskyScanEngineResponse.model_validate_json(response)
