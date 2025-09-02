@@ -1,17 +1,12 @@
 import base64
 import dataclasses
 import enum
-import logging
 import typing
 
 import httpx
 import pydantic
 
 from safe_s3_storage.exceptions import KasperskyScanEngineConnectionStatusError, KasperskyScanEngineThreatDetectedError
-
-
-kaspersky_logger: typing.Final = logging.getLogger(__name__)
-kaspersky_logger.setLevel(logging.ERROR)
 
 
 class KasperskyScanEngineRequest(pydantic.BaseModel):
