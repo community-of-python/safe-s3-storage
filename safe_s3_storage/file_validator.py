@@ -2,7 +2,7 @@ import dataclasses
 import enum
 import typing
 
-import puremagic
+import magic
 import pyvips  # type: ignore[import-untyped]
 
 from safe_s3_storage import exceptions
@@ -48,16 +48,7 @@ class FileValidator:
     image_quality: int = 85
 
     def _validate_mime_type(self, *, file_name: str, file_content: bytes) -> str:
-        try:
-            mime_type = puremagic.from_string(file_content, mime=True)
-        except puremagic.PureError:
-            # unlike python-magic, puremagic doesn't recognize if text is binary
-            try:
-                file_content.decode()
-            except UnicodeDecodeError:
-                mime_type = "application/octet-stream"
-            else:
-                mime_type = "text/plain"
+        mime_type: typing.Final = magic.from_buffer(file_content, mime=True)
         if self.allowed_mime_types is None or mime_type in self.allowed_mime_types:
             return mime_type
 
