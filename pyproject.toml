@@ -22,7 +22,7 @@ dependencies = [
     "pydantic",
     "pyvips",
     "pyvips-binary",
-    "python-magic",
+    "magika",
 ]
 
 [dependency-groups]
