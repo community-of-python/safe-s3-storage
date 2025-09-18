@@ -49,7 +49,10 @@ class FileValidator:
 
     def _validate_mime_type(self, *, file_name: str, file_content: bytes) -> str:
         mime_type_prediction: typing.Final = Magika().identify_bytes(file_content)
-        mime_type: typing.Final = mime_type_prediction.output.mime_type
+        if mime_type_prediction.dl.extensions:
+            mime_type = mime_type_prediction.dl.mime_type
+        else:
+            mime_type = mime_type_prediction.output.mime_type
         if self.allowed_mime_types is None or mime_type in self.allowed_mime_types:
             return mime_type
 
