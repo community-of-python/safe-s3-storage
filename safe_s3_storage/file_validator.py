@@ -49,7 +49,9 @@ class FileValidator:
 
     def _validate_mime_type(self, *, file_name: str, file_content: bytes) -> str:
         mime_type_prediction: typing.Final = Magika().identify_bytes(file_content)
-        if mime_type_prediction.dl.extensions:
+        if mime_type_prediction.output.is_text and file_name.endswith(".txt"):
+            mime_type = "text/plain"
+        elif mime_type_prediction.dl.extensions:
             mime_type = mime_type_prediction.dl.mime_type
         else:
             mime_type = mime_type_prediction.output.mime_type
