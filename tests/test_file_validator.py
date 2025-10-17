@@ -129,6 +129,19 @@ class TestFileValidator:
             == _IMAGE_CONVERSION_FORMAT_TO_MIME_TYPE_AND_EXTENSION_MAP[image_conversion_format][0]
         )
 
+    @pytest.mark.parametrize("file_content", ["'", "test'", "abracadabra", "python script"])
+    async def test_txt_file_validate(self, file_content: str) -> None:
+        file_name: typing.Final = "file_name.txt"
+
+        validated_file: typing.Final = await FileValidator(allowed_mime_types=["text/plain"]).validate_file(
+            file_name=file_name, file_content=file_content.encode()
+        )
+
+        assert validated_file.file_name == file_name
+        assert validated_file.file_content == file_content.encode()
+        assert validated_file.file_size == len(file_content)
+        assert validated_file.mime_type == "text/plain"
+
     @pytest.mark.parametrize("binary", [True, False])
     async def test_ok_not_image(self, faker: faker.Faker, binary: bool) -> None:
         file_name: typing.Final = faker.file_name()
