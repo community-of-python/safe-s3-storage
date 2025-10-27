@@ -196,3 +196,19 @@ class TestFileValidator:
         )
         with pytest.raises(KasperskyScanEngineConnectionStatusError):
             await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
+
+    @pytest.mark.parametrize("image_conversion_format", list(ImageConversionFormat))
+    async def test_excluded_conversion_formats(
+        self, faker: faker.Faker, png_file: bytes, image_conversion_format: ImageConversionFormat
+    ) -> None:
+        file_base_name: typing.Final = faker.pystr()
+        file_extension: typing.Final = faker.file_extension()
+        validated_file: typing.Final = await FileValidator(
+            allowed_mime_types=["image/png"],
+            image_conversion_format=image_conversion_format,
+            excluded_conversion_formats=[file_extension],
+        ).validate_file(file_name=f"{file_base_name}.{file_extension}", file_content=png_file)
+
+        assert validated_file.file_name == f"{file_base_name}.{file_extension}"
+        assert validated_file.file_content == png_file
+        assert validated_file.file_size == len(validated_file.file_content)
