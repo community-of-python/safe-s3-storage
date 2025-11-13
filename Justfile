@@ -28,6 +28,9 @@ lint-ci:
     uv run --group lint ruff check --no-fix
     uv run --group lint mypy .
 
+test-ci *args:
+    uv run pytest {{ args }}
+
 publish:
     rm -rf dist
     uv version $GITHUB_REF_NAME
