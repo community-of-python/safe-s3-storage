@@ -6,6 +6,7 @@ keywords = ["s3", "kaspersky", "antivirus", "upload"]
 classifiers = [
     "Natural Language :: English",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries",
@@ -22,12 +23,22 @@ dependencies = [
     "pydantic",
     "pyvips",
     "pyvips-binary",
-    "magika",
+    "python-magic",
 ]
 
 [dependency-groups]
-dev = ["anyio", "faker", "pytest", "pytest-cov"]
-lint = [{ include-group = "dev" }, "auto-typing-final", "mypy", "ruff"]
+dev = [
+    "anyio",
+    "faker",
+    "pytest",
+    "pytest-cov",
+]
+lint = [
+    { include-group = "dev" },
+    "auto-typing-final",
+    "mypy",
+    "ruff",
+]
 
 [build-system]
 requires = ["uv_build"]

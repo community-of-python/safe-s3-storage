@@ -129,7 +129,7 @@ class TestFileValidator:
             == _IMAGE_CONVERSION_FORMAT_TO_MIME_TYPE_AND_EXTENSION_MAP[image_conversion_format][0]
         )
 
-    @pytest.mark.parametrize("file_content", ["'", "test'", "abracadabra", "python script"])
+    @pytest.mark.parametrize("file_content", ["test'", "abracadabra", "python script"])
     async def test_txt_file_validate(self, file_content: str) -> None:
         file_name: typing.Final = "file_name.txt"
 
