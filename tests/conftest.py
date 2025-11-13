@@ -9,7 +9,7 @@ def anyio_backend() -> str:
     return "asyncio"
 
 
-JS_MIME_TYPE: typing.Final = "text/javascript"
+MIME_OCTET_STREAM: typing.Final = "application/octet-stream"
 
 
 def generate_binary_content(faker: faker.Faker) -> bytes:
