@@ -1,5 +1,17 @@
 default: install lint test
 
+down:
+    docker compose down --remove-orphans
+
+sh:
+    docker compose run --service-ports application bash
+
+test *args: down && down
+    docker compose run application uv run --no-sync pytest {{ args }}
+
+build:
+    docker compose build application
+
 install:
     uv lock --upgrade
     uv sync --frozen --all-groups
@@ -15,9 +27,6 @@ lint-ci:
     uv run --group lint ruff format --check
     uv run --group lint ruff check --no-fix
     uv run --group lint mypy .
-
-test *args:
-    uv run pytest {{ args }}
 
 publish:
     rm -rf dist

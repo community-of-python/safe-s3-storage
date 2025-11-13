@@ -18,7 +18,7 @@ from safe_s3_storage.kaspersky_scan_engine import (
     KasperskyScanEngineResponse,
     KasperskyScanEngineScanResult,
 )
-from tests.conftest import MIME_OCTET_STREAM, generate_binary_content
+from tests.conftest import JS_MIME_TYPE, generate_binary_content
 
 
 @pytest.fixture
@@ -86,7 +86,7 @@ class TestFileValidator:
 
     async def test_fails_to_validate_file_size(self, faker: faker.Faker) -> None:
         with pytest.raises(exceptions.TooLargeFileError):
-            await FileValidator(allowed_mime_types=[MIME_OCTET_STREAM], max_file_size_bytes=0).validate_file(
+            await FileValidator(allowed_mime_types=[JS_MIME_TYPE], max_file_size_bytes=0).validate_file(
                 file_name=faker.file_name(), file_content=generate_binary_content(faker)
             )
 
@@ -148,13 +148,13 @@ class TestFileValidator:
         file_content: typing.Final = generate_binary_content(faker) if binary else faker.pystr().encode()
 
         validated_file: typing.Final = await FileValidator(
-            allowed_mime_types=[MIME_OCTET_STREAM if binary else "text/plain"]
+            allowed_mime_types=[JS_MIME_TYPE if binary else "text/plain"]
         ).validate_file(file_name=file_name, file_content=file_content)
 
         assert validated_file.file_name == file_name
         assert validated_file.file_content == file_content
         assert validated_file.file_size == len(file_content)
-        assert validated_file.mime_type == MIME_OCTET_STREAM if binary else "text/plain"
+        assert validated_file.mime_type == JS_MIME_TYPE if binary else "text/plain"
 
     @pytest.mark.parametrize("ok_response", [True, False])
     async def test_antivirus_skips_images(self, faker: faker.Faker, png_file: bytes, ok_response: bool) -> None:
@@ -168,8 +168,8 @@ class TestFileValidator:
         with pytest.raises(exceptions.KasperskyScanEngineThreatDetectedError):
             await FileValidator(
                 kaspersky_scan_engine=get_mocked_kaspersky_scan_engine_client(faker=faker, ok_response=False),
-                allowed_mime_types=[MIME_OCTET_STREAM],
-            ).validate_file(file_name=faker.file_name(), file_content=generate_binary_content(faker))
+                allowed_mime_types=[JS_MIME_TYPE],
+            ).validate_file(file_name="test.js", file_content=generate_binary_content(faker))
 
     async def test_antivirus_fails_on_images(self, faker: faker.Faker, png_file: bytes) -> None:
         with pytest.raises(exceptions.KasperskyScanEngineThreatDetectedError):
@@ -181,8 +181,8 @@ class TestFileValidator:
     async def test_antivirus_passes_on_files(self, faker: faker.Faker) -> None:
         await FileValidator(
             kaspersky_scan_engine=get_mocked_kaspersky_scan_engine_client(faker=faker, ok_response=True),
-            allowed_mime_types=[MIME_OCTET_STREAM],
-        ).validate_file(file_name=faker.file_name(), file_content=generate_binary_content(faker))
+            allowed_mime_types=[JS_MIME_TYPE],
+        ).validate_file(file_name="test.js", file_content=generate_binary_content(faker))
 
     async def test_antivirus_passes_on_images(self, faker: faker.Faker, png_file: bytes) -> None:
         await FileValidator(
