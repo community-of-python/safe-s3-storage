@@ -3,7 +3,6 @@ import enum
 import typing
 
 import magic
-import pyvips  # type: ignore[import-untyped]
 
 from safe_s3_storage import exceptions
 from safe_s3_storage.kaspersky_scan_engine import KasperskyScanEngineClient
@@ -74,6 +73,8 @@ class FileValidator:
         return extension not in self.excluded_conversion_formats
 
     def _convert_image(self, validated_file: ValidatedFile) -> ValidatedFile:
+        import pyvips  # type: ignore[import-untyped] # noqa: PLC0415
+
         if not _is_image(validated_file.mime_type):
             return validated_file
 
