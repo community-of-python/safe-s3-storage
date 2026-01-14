@@ -9,6 +9,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries",
     "Topic :: Communications :: File Sharing",
     "Typing :: Typed",
@@ -22,7 +23,7 @@ dependencies = [
     "types-aioboto3[s3]",
     "pydantic",
     "pyvips",
-    "pyvips-binary",
+    "pyvips-binary<=8.17.3",
     "python-magic",
 ]
 
