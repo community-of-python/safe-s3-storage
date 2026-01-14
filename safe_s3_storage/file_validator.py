@@ -2,8 +2,7 @@ import dataclasses
 import enum
 import typing
 
-import pyvips  # type: ignore[import-untyped]
-from magika import Magika
+import magic
 
 from safe_s3_storage import exceptions
 from safe_s3_storage.kaspersky_scan_engine import KasperskyScanEngineClient
@@ -46,15 +45,10 @@ class FileValidator:
     max_image_size_bytes: int = 50 * 1024 * 1024  # 50 MB
     image_conversion_format: ImageConversionFormat = ImageConversionFormat.webp
     image_quality: int = 85
+    excluded_conversion_formats: list[str] | None = None
 
     def _validate_mime_type(self, *, file_name: str, file_content: bytes) -> str:
-        mime_type_prediction: typing.Final = Magika().identify_bytes(file_content)
-        if mime_type_prediction.output.is_text and file_name.endswith(".txt"):
-            mime_type = "text/plain"
-        elif mime_type_prediction.dl.extensions:
-            mime_type = mime_type_prediction.dl.mime_type
-        else:
-            mime_type = mime_type_prediction.output.mime_type
+        mime_type: typing.Final = magic.from_buffer(file_content, mime=True)
         if self.allowed_mime_types is None or mime_type in self.allowed_mime_types:
             return mime_type
 
@@ -71,8 +65,20 @@ class FileValidator:
             )
         return content_size
 
+    def _should_convert_file(self, file_name: str) -> bool:
+        if not self.excluded_conversion_formats:
+            return True
+
+        _, extension = _split_file_base_name_and_extensions(file_name=file_name)
+        return extension not in self.excluded_conversion_formats
+
     def _convert_image(self, validated_file: ValidatedFile) -> ValidatedFile:
+        import pyvips  # type: ignore[import-untyped] # noqa: PLC0415
+
         if not _is_image(validated_file.mime_type):
+            return validated_file
+
+        if not self._should_convert_file(validated_file.file_name):
             return validated_file
 
         target_mime_type, target_extension = _IMAGE_CONVERSION_FORMAT_TO_MIME_TYPE_AND_EXTENSION_MAP[

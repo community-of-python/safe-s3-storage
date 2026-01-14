@@ -24,12 +24,22 @@ dependencies = [
     "pydantic",
     "pyvips",
     "pyvips-binary",
-    "magika",
+    "python-magic",
 ]
 
 [dependency-groups]
-dev = ["anyio", "faker", "pytest", "pytest-cov"]
-lint = [{ include-group = "dev" }, "auto-typing-final", "mypy", "ruff"]
+dev = [
+    "anyio",
+    "faker",
+    "pytest",
+    "pytest-cov",
+]
+lint = [
+    { include-group = "dev" },
+    "auto-typing-final",
+    "mypy",
+    "ruff",
+]
 
 [build-system]
 requires = ["uv_build"]

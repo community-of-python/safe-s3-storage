@@ -1,6 +1,6 @@
 # safe-s3-storage
 
-S3 tools for uploading files to S3 safely (antivirus check, etc) as well as downloading and deleting files.
+S3 tools for uploading files to S3 safely (antivirus check, etc.) as well as downloading and deleting files.
 
 ## How To Use
 
