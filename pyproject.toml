@@ -22,7 +22,7 @@ dependencies = [
     "aioboto3",
     "types-aioboto3[s3]",
     "pydantic",
-    "pyvips",
+    "pyvips==3.0.0",
     "pyvips-binary",
     "python-magic",
 ]
