@@ -75,6 +75,13 @@ class FileValidator:
     def _convert_image(self, validated_file: ValidatedFile) -> ValidatedFile:
         import pyvips  # type: ignore[import-untyped] # noqa: PLC0415
 
+        # libvips keeps a process-global operation cache. For one-shot conversions of
+        # unique upload buffers it never hits and only retains memory, so disable it.
+        # The guard makes the setter effectively run once (max is 0 after the first
+        # call) and avoids a module-level global that ruff's ALL ruleset would flag.
+        if pyvips.cache_get_max():
+            pyvips.cache_set_max(0)
+
         if not _is_image(validated_file.mime_type):
             return validated_file
 

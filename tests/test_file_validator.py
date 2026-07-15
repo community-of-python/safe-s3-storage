@@ -4,6 +4,7 @@ import typing
 import faker
 import httpx
 import pytest
+import pyvips  # type: ignore[import-untyped]
 from httpx import codes as status_codes
 
 from safe_s3_storage import exceptions
@@ -212,3 +213,15 @@ class TestFileValidator:
         assert validated_file.file_name == f"{file_base_name}.{file_extension}"
         assert validated_file.file_content == png_file
         assert validated_file.file_size == len(validated_file.file_content)
+
+    async def test_conversion_does_not_leave_pyvips_operations_cached(
+        self, faker: faker.Faker, png_file: bytes
+    ) -> None:
+        # libvips keeps a process-global operation cache; for one-shot conversions of
+        # unique buffers it only retains memory. The validator must disable it so the
+        # cache does not accumulate across conversions (memory leak).
+        await FileValidator(allowed_mime_types=["image/png"]).validate_file(
+            file_name=f"{faker.pystr()}.png", file_content=png_file
+        )
+
+        assert pyvips.cache_get_size() == 0
