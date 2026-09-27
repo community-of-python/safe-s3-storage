@@ -18,7 +18,7 @@ authors = [{ name = "community-of-python" }]
 version = "0"
 requires-python = ">=3.10"
 dependencies = [
-    "httpx",
+    "httpx2>=2",
     "aioboto3",
     "types-aioboto3[s3]",
     "pydantic",
@@ -69,6 +69,7 @@ ignore = [
     "G004",
     "FA",
     "COM812",
+    "CPY",
     "ISC001",
 ]
 

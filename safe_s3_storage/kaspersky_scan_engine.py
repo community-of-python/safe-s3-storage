@@ -3,7 +3,7 @@ import dataclasses
 import enum
 import typing
 
-import httpx
+import httpx2
 import pydantic
 
 from safe_s3_storage.exceptions import KasperskyScanEngineConnectionStatusError, KasperskyScanEngineThreatDetectedError
@@ -31,7 +31,7 @@ class KasperskyScanEngineResponse(pydantic.BaseModel):
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
 class KasperskyScanEngineClient:
-    httpx_client: httpx.AsyncClient
+    httpx_client: httpx2.AsyncClient
     service_url: str
     client_name: str
     timeout_ms: int = 10000
@@ -48,7 +48,7 @@ class KasperskyScanEngineClient:
         ).model_dump(mode="json")
         try:
             response: typing.Final = await self._send_scan_memory_request(payload)
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             raise KasperskyScanEngineConnectionStatusError from exc
         validated_response: typing.Final = KasperskyScanEngineResponse.model_validate_json(response)
         if validated_response.scanResult == KasperskyScanEngineScanResult.DETECT:

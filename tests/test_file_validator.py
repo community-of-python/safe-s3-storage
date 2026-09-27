@@ -2,10 +2,10 @@ import random
 import typing
 
 import faker
-import httpx
+import httpx2
 import pytest
 import pyvips  # type: ignore[import-untyped]
-from httpx import codes as status_codes
+from httpx2 import codes as status_codes
 
 from safe_s3_storage import exceptions
 from safe_s3_storage.exceptions import KasperskyScanEngineConnectionStatusError
@@ -58,9 +58,9 @@ def get_mocked_kaspersky_scan_engine_client(*, faker: faker.Faker, ok_response: 
     return KasperskyScanEngineClient(
         service_url=faker.url(schemes=["http"]),
         client_name=faker.pystr(),
-        httpx_client=httpx.AsyncClient(
-            transport=httpx.MockTransport(
-                lambda _: httpx.Response(status_codes.OK, json=scan_response.model_dump(mode="json"))
+        httpx_client=httpx2.AsyncClient(
+            transport=httpx2.MockTransport(
+                lambda _: httpx2.Response(status_codes.OK, json=scan_response.model_dump(mode="json"))
             )
         ),
     )
@@ -72,8 +72,8 @@ def get_mocked_kaspersky_scan_engine_client_bad_response(
     return KasperskyScanEngineClient(
         service_url=faker.url(schemes=["http"]),
         client_name=faker.pystr(),
-        httpx_client=httpx.AsyncClient(
-            transport=httpx.MockTransport(lambda _: httpx.Response(status_code, json="")),
+        httpx_client=httpx2.AsyncClient(
+            transport=httpx2.MockTransport(lambda _: httpx2.Response(status_code, json="")),
         ),
     )
 

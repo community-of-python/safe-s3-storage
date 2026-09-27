@@ -34,5 +34,4 @@ async def create_s3_resource() -> typing.AsyncIterator[S3Client]:
         config=AioConfig(retries={"max_attempts": 3, "mode": "standard"}),
     ) as s3_client:
         yield s3_client
-
 ```
