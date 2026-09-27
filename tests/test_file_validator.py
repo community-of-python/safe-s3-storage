@@ -55,25 +55,19 @@ def get_mocked_kaspersky_scan_engine_client(*, faker: faker.Faker, ok_response: 
         scan_result = KasperskyScanEngineScanResult.DETECT
 
     scan_response: typing.Final = KasperskyScanEngineResponse(scanResult=scan_result)
-    return KasperskyScanEngineClient(
-        service_url=faker.url(schemes=["http"]),
-        client_name=faker.pystr(),
-        httpx_client=httpx2.AsyncClient(
-            transport=httpx2.MockTransport(
-                lambda _: httpx2.Response(status_codes.OK, json=scan_response.model_dump(mode="json"))
-            )
-        ),
+    return get_kaspersky_scan_engine_client_responding_with(
+        faker=faker, status_code=status_codes.OK, json=scan_response.model_dump(mode="json")
     )
 
 
-def get_mocked_kaspersky_scan_engine_client_bad_response(
-    *, faker: faker.Faker, status_code: int = status_codes.OK
+def get_kaspersky_scan_engine_client_responding_with(
+    *, faker: faker.Faker, status_code: int, json: object
 ) -> KasperskyScanEngineClient:
     return KasperskyScanEngineClient(
         service_url=faker.url(schemes=["http"]),
         client_name=faker.pystr(),
         httpx_client=httpx2.AsyncClient(
-            transport=httpx2.MockTransport(lambda _: httpx2.Response(status_code, json="")),
+            transport=httpx2.MockTransport(lambda _: httpx2.Response(status_code, json=json)),
         ),
     )
 
@@ -192,8 +186,8 @@ class TestFileValidator:
         ).validate_file(file_name=faker.file_name(), file_content=png_file)
 
     async def test_antivirus_no_connection(self, faker: faker.Faker, png_file: bytes) -> None:
-        kasper: typing.Final = get_mocked_kaspersky_scan_engine_client_bad_response(
-            faker=faker, status_code=status_codes.GATEWAY_TIMEOUT
+        kasper: typing.Final = get_kaspersky_scan_engine_client_responding_with(
+            faker=faker, status_code=status_codes.GATEWAY_TIMEOUT, json=""
         )
         with pytest.raises(KasperskyScanEngineConnectionStatusError):
             await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
