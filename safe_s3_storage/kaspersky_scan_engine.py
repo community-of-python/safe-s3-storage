@@ -30,6 +30,13 @@ class KasperskyScanEngineScanResult(str, enum.Enum):
     SERVER_ERROR = "SERVER_ERROR"
 
 
+_THREAT_RESULTS: typing.Final = frozenset(
+    {
+        KasperskyScanEngineScanResult.DETECT,
+        KasperskyScanEngineScanResult.DISINFECTED,
+        KasperskyScanEngineScanResult.DELETED,
+    }
+)
 _UNSCANNED_RESULTS: typing.Final = frozenset(
     {KasperskyScanEngineScanResult.NON_SCANNED, KasperskyScanEngineScanResult.SERVER_ERROR}
 )
@@ -79,7 +86,7 @@ class KasperskyScanEngineClient:
             validated_response: typing.Final = KasperskyScanEngineResponse.model_validate_json(response)
         except pydantic.ValidationError as exc:
             raise KasperskyScanEngineInvalidResponseError(response=response, file_name=file_name) from exc
-        if validated_response.scanResult == KasperskyScanEngineScanResult.DETECT:
+        if validated_response.scanResult in _THREAT_RESULTS:
             raise KasperskyScanEngineThreatDetectedError(response=response, file_name=file_name)
         if validated_response.scanResult in _UNSCANNED_RESULTS and not self.allow_unscanned_files:
             raise KasperskyScanEngineNotScannedError(response=response, file_name=file_name)
