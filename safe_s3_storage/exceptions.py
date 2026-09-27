@@ -14,6 +14,12 @@ class KasperskyScanEngineThreatDetectedError(BaseError):
 
 
 @dataclasses.dataclass
+class KasperskyScanEngineNotScannedError(BaseError):
+    response: bytes
+    file_name: str
+
+
+@dataclasses.dataclass
 class KasperskyScanEngineConnectionStatusError(BaseError): ...
 
 

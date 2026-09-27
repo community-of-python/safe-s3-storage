@@ -47,13 +47,17 @@ def png_file() -> bytes:
     )
 
 
+ACCEPTED_SCAN_RESULTS: typing.Final = [
+    KasperskyScanEngineScanResult.CLEAN,
+    KasperskyScanEngineScanResult.DISINFECTED,
+    KasperskyScanEngineScanResult.DELETED,
+]
+
+
 def get_mocked_kaspersky_scan_engine_client(*, faker: faker.Faker, ok_response: bool) -> KasperskyScanEngineClient:
-    if ok_response:
-        all_scan_results: typing.Final[list[KasperskyScanEngineScanResult]] = list(KasperskyScanEngineScanResult)
-        all_scan_results.remove(KasperskyScanEngineScanResult.DETECT)
-        scan_result = random.choice(all_scan_results)
-    else:
-        scan_result = KasperskyScanEngineScanResult.DETECT
+    scan_result: typing.Final = (
+        random.choice(ACCEPTED_SCAN_RESULTS) if ok_response else KasperskyScanEngineScanResult.DETECT
+    )
 
     scan_response: typing.Final = KasperskyScanEngineResponse(scanResult=scan_result)
     return get_kaspersky_scan_engine_client_responding_with(
@@ -89,11 +93,12 @@ def get_kaspersky_scan_engine_client_with_outcomes(
 
 
 def get_kaspersky_scan_engine_client_responding_with(
-    *, faker: faker.Faker, status_code: int, json: object
+    *, faker: faker.Faker, status_code: int, json: object, allow_unscanned_files: bool = False
 ) -> KasperskyScanEngineClient:
     return KasperskyScanEngineClient(
         service_url=faker.url(schemes=["http"]),
         client_name=faker.pystr(),
+        allow_unscanned_files=allow_unscanned_files,
         httpx_client=httpx2.AsyncClient(
             transport=httpx2.MockTransport(lambda _: httpx2.Response(status_code, json=json)),
         ),
@@ -220,9 +225,31 @@ class TestFileValidator:
         with pytest.raises(KasperskyScanEngineConnectionStatusError):
             await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
 
-    async def test_antivirus_accepts_v3_0_non_scanned_reason(self, faker: faker.Faker, png_file: bytes) -> None:
+    @pytest.mark.parametrize("scan_result", ["NON_SCANNED", "NON_SCANNED (PASSWORD PROTECTED)", "SERVER_ERROR"])
+    async def test_antivirus_rejects_unscanned_files(
+        self, faker: faker.Faker, png_file: bytes, scan_result: str
+    ) -> None:
         kasper: typing.Final = get_kaspersky_scan_engine_client_responding_with(
-            faker=faker, status_code=status_codes.OK, json={"scanResult": "NON_SCANNED (PASSWORD PROTECTED)"}
+            faker=faker, status_code=status_codes.OK, json={"scanResult": scan_result}
+        )
+        with pytest.raises(exceptions.KasperskyScanEngineNotScannedError):
+            await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
+
+    @pytest.mark.parametrize("scan_result", ["NON_SCANNED", "NON_SCANNED (PASSWORD PROTECTED)", "SERVER_ERROR"])
+    async def test_antivirus_allows_unscanned_files_when_configured(
+        self, faker: faker.Faker, png_file: bytes, scan_result: str
+    ) -> None:
+        kasper: typing.Final = get_kaspersky_scan_engine_client_responding_with(
+            faker=faker, status_code=status_codes.OK, json={"scanResult": scan_result}, allow_unscanned_files=True
+        )
+        await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
+
+    @pytest.mark.parametrize("scan_result", ACCEPTED_SCAN_RESULTS)
+    async def test_antivirus_accepts_scanned_files(
+        self, faker: faker.Faker, png_file: bytes, scan_result: KasperskyScanEngineScanResult
+    ) -> None:
+        kasper: typing.Final = get_kaspersky_scan_engine_client_responding_with(
+            faker=faker, status_code=status_codes.OK, json={"scanResult": scan_result.value}
         )
         await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
 

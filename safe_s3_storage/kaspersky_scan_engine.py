@@ -9,6 +9,7 @@ import pydantic
 from safe_s3_storage.exceptions import (
     KasperskyScanEngineConnectionStatusError,
     KasperskyScanEngineInvalidResponseError,
+    KasperskyScanEngineNotScannedError,
     KasperskyScanEngineThreatDetectedError,
 )
 
@@ -29,6 +30,11 @@ class KasperskyScanEngineScanResult(str, enum.Enum):
     SERVER_ERROR = "SERVER_ERROR"
 
 
+_UNSCANNED_RESULTS: typing.Final = frozenset(
+    {KasperskyScanEngineScanResult.NON_SCANNED, KasperskyScanEngineScanResult.SERVER_ERROR}
+)
+
+
 class KasperskyScanEngineResponse(pydantic.BaseModel):
     scanResult: KasperskyScanEngineScanResult  # noqa: N815
 
@@ -45,6 +51,7 @@ class KasperskyScanEngineClient:
     client_name: str
     timeout_ms: int = 10000
     max_retries: int = 3
+    allow_unscanned_files: bool = False
 
     async def _send_scan_memory_request(self, payload: dict[str, typing.Any]) -> bytes:
         retries_left = self.max_retries
@@ -74,3 +81,5 @@ class KasperskyScanEngineClient:
             raise KasperskyScanEngineInvalidResponseError(response=response, file_name=file_name) from exc
         if validated_response.scanResult == KasperskyScanEngineScanResult.DETECT:
             raise KasperskyScanEngineThreatDetectedError(response=response, file_name=file_name)
+        if validated_response.scanResult in _UNSCANNED_RESULTS and not self.allow_unscanned_files:
+            raise KasperskyScanEngineNotScannedError(response=response, file_name=file_name)
