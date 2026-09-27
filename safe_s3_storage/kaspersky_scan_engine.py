@@ -48,7 +48,7 @@ class KasperskyScanEngineClient:
         ).model_dump(mode="json")
         try:
             response: typing.Final = await self._send_scan_memory_request(payload)
-        except httpx2.HTTPStatusError as exc:
+        except (httpx2.HTTPStatusError, httpx2.TransportError) as exc:
             raise KasperskyScanEngineConnectionStatusError from exc
         validated_response: typing.Final = KasperskyScanEngineResponse.model_validate_json(response)
         if validated_response.scanResult == KasperskyScanEngineScanResult.DETECT:

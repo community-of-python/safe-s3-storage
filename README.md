@@ -138,12 +138,11 @@ The library raises these errors, all subclasses of `safe_s3_storage.exceptions.B
 | `TooLargeFileError` | The file exceeds `max_file_size_bytes`, or `max_image_size_bytes` for images. |
 | `FailedToConvertImageError` | The image can't be decoded or converted, for example because it is truncated. |
 | `KasperskyScanEngineThreatDetectedError` | Kaspersky Scan Engine reports a threat. |
-| `KasperskyScanEngineConnectionStatusError` | Kaspersky Scan Engine responds with a non-2xx status. |
+| `KasperskyScanEngineConnectionStatusError` | Kaspersky Scan Engine can't be reached, times out or responds with a non-2xx status. The httpx2 error is chained as `__cause__`. |
 | `InvalidS3PathError` | An `s3_path` is not in `bucket/key` form. |
 | `FailedToReplaceS3BaseUrlWithProxyBaseUrlError` | `create_file_url` can't find the S3 endpoint in the presigned URL to replace it with `proxy_base_url`. |
 
 Other failures reach you unwrapped:
 
-- `httpx2.TransportError` when Kaspersky Scan Engine can't be reached or times out.
 - `pydantic.ValidationError` when Kaspersky Scan Engine returns a response body the library doesn't recognize.
 - botocore's `ClientError` and `BotoCoreError` for S3 failures.
