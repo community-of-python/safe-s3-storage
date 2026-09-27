@@ -192,6 +192,22 @@ class TestFileValidator:
         with pytest.raises(KasperskyScanEngineConnectionStatusError):
             await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
 
+    @pytest.mark.parametrize("transport_error", [httpx2.ConnectError, httpx2.ReadTimeout])
+    async def test_antivirus_transport_error(
+        self, faker: faker.Faker, png_file: bytes, transport_error: type[httpx2.TransportError]
+    ) -> None:
+        def raise_transport_error(request: httpx2.Request) -> httpx2.Response:
+            raise transport_error(faker.pystr(), request=request)
+
+        kasper: typing.Final = KasperskyScanEngineClient(
+            service_url=faker.url(schemes=["http"]),
+            client_name=faker.pystr(),
+            httpx_client=httpx2.AsyncClient(transport=httpx2.MockTransport(raise_transport_error)),
+        )
+        with pytest.raises(KasperskyScanEngineConnectionStatusError) as exc_info:
+            await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
+        assert isinstance(exc_info.value.__cause__, transport_error)
+
     @pytest.mark.parametrize("image_conversion_format", list(ImageConversionFormat))
     async def test_excluded_conversion_formats(
         self, faker: faker.Faker, png_file: bytes, image_conversion_format: ImageConversionFormat
