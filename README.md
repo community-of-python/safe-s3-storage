@@ -73,7 +73,9 @@ The object key is generated so that uploads never overwrite each other and users
 
 Use the `/api/v3.1/scanmemory` endpoint. The v3.0 endpoint also works, but it ignores the `name` field.
 
-Files that Scan Engine reports as `NON_SCANNED` or `SERVER_ERROR` are rejected with `KasperskyScanEngineNotScannedError`, because they were never checked. Password-protected archives, for example, come back as `NON_SCANNED`. Pass `allow_unscanned_files=True` to `KasperskyScanEngineClient` to accept them anyway. `CLEAN`, `DISINFECTED` and `DELETED` results are accepted.
+Files that Scan Engine reports as `NON_SCANNED` or `SERVER_ERROR` are rejected with `KasperskyScanEngineNotScannedError`, because they were never checked. Password-protected archives, for example, come back as `NON_SCANNED`. Pass `allow_unscanned_files=True` to `KasperskyScanEngineClient` to accept them anyway.
+
+Otherwise, only `CLEAN` results are accepted. `DISINFECTED` and `DELETED` mean Scan Engine found a threat in its copy of the file, while safe-s3-storage would store the original, so they raise `KasperskyScanEngineThreatDetectedError` like `DETECT`.
 
 `timeout_ms` is the scan timeout sent to Scan Engine. The HTTP client has its own timeout, 5 seconds by default in httpx2, so set it above `timeout_ms` as in the example. Otherwise slow scans fail on the client side first.
 
@@ -143,7 +145,7 @@ The library raises these errors, all subclasses of `safe_s3_storage.exceptions.B
 | `NotAllowedMimeTypeError` | The detected MIME type is not in `allowed_mime_types`. |
 | `TooLargeFileError` | The file exceeds `max_file_size_bytes`, or `max_image_size_bytes` for images. |
 | `FailedToConvertImageError` | The image can't be decoded or converted, for example because it is truncated. |
-| `KasperskyScanEngineThreatDetectedError` | Kaspersky Scan Engine reports a threat. |
+| `KasperskyScanEngineThreatDetectedError` | Kaspersky Scan Engine reports `DETECT`, `DISINFECTED` or `DELETED`. |
 | `KasperskyScanEngineNotScannedError` | Kaspersky Scan Engine reports `NON_SCANNED` or `SERVER_ERROR`, unless `allow_unscanned_files=True`. |
 | `KasperskyScanEngineInvalidResponseError` | Kaspersky Scan Engine returns a response body the library doesn't recognize. The pydantic error is chained as `__cause__`. |
 | `KasperskyScanEngineConnectionStatusError` | Kaspersky Scan Engine can't be reached, times out or responds with a non-2xx status, after any retries. The httpx2 error is chained as `__cause__`. |

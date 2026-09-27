@@ -1,4 +1,3 @@
-import random
 import typing
 
 import faker
@@ -47,16 +46,9 @@ def png_file() -> bytes:
     )
 
 
-ACCEPTED_SCAN_RESULTS: typing.Final = [
-    KasperskyScanEngineScanResult.CLEAN,
-    KasperskyScanEngineScanResult.DISINFECTED,
-    KasperskyScanEngineScanResult.DELETED,
-]
-
-
 def get_mocked_kaspersky_scan_engine_client(*, faker: faker.Faker, ok_response: bool) -> KasperskyScanEngineClient:
     scan_result: typing.Final = (
-        random.choice(ACCEPTED_SCAN_RESULTS) if ok_response else KasperskyScanEngineScanResult.DETECT
+        KasperskyScanEngineScanResult.CLEAN if ok_response else KasperskyScanEngineScanResult.DETECT
     )
 
     scan_response: typing.Final = KasperskyScanEngineResponse(scanResult=scan_result)
@@ -244,14 +236,22 @@ class TestFileValidator:
         )
         await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
 
-    @pytest.mark.parametrize("scan_result", ACCEPTED_SCAN_RESULTS)
-    async def test_antivirus_accepts_scanned_files(
+    @pytest.mark.parametrize(
+        "scan_result",
+        [
+            KasperskyScanEngineScanResult.DETECT,
+            KasperskyScanEngineScanResult.DISINFECTED,
+            KasperskyScanEngineScanResult.DELETED,
+        ],
+    )
+    async def test_antivirus_rejects_threats(
         self, faker: faker.Faker, png_file: bytes, scan_result: KasperskyScanEngineScanResult
     ) -> None:
         kasper: typing.Final = get_kaspersky_scan_engine_client_responding_with(
             faker=faker, status_code=status_codes.OK, json={"scanResult": scan_result.value}
         )
-        await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
+        with pytest.raises(exceptions.KasperskyScanEngineThreatDetectedError):
+            await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
 
     @pytest.mark.parametrize("response_json", [{"scanResult": "UNKNOWN"}, {}, ""])
     async def test_antivirus_invalid_response(self, faker: faker.Faker, png_file: bytes, response_json: object) -> None:
