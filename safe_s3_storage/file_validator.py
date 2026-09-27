@@ -94,7 +94,7 @@ class FileValidator:
 
         try:
             pyvips_image: typing.Final[pyvips.Image] = pyvips.Image.new_from_buffer(
-                validated_file.file_content, options=""
+                validated_file.file_content, options="", fail_on="truncated"
             )
             new_file_content: typing.Final = typing.cast(
                 "bytes",
