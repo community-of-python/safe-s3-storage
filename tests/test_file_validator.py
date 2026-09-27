@@ -61,6 +61,33 @@ def get_mocked_kaspersky_scan_engine_client(*, faker: faker.Faker, ok_response: 
     )
 
 
+ScanEngineOutcome = int | type[httpx2.TransportError]
+
+
+def get_kaspersky_scan_engine_client_with_outcomes(
+    *, faker: faker.Faker, outcomes: list[ScanEngineOutcome], max_retries: int
+) -> tuple[KasperskyScanEngineClient, list[httpx2.Request]]:
+    requests: typing.Final[list[httpx2.Request]] = []
+    clean_response: typing.Final = KasperskyScanEngineResponse(scanResult=KasperskyScanEngineScanResult.CLEAN)
+
+    def respond(request: httpx2.Request) -> httpx2.Response:
+        outcome: typing.Final = outcomes[len(requests)]
+        requests.append(request)
+        if not isinstance(outcome, int):
+            raise outcome(faker.pystr(), request=request)
+        if outcome == status_codes.OK:
+            return httpx2.Response(outcome, json=clean_response.model_dump(mode="json"))
+        return httpx2.Response(outcome, json="")
+
+    client: typing.Final = KasperskyScanEngineClient(
+        service_url=faker.url(schemes=["http"]),
+        client_name=faker.pystr(),
+        max_retries=max_retries,
+        httpx_client=httpx2.AsyncClient(transport=httpx2.MockTransport(respond)),
+    )
+    return client, requests
+
+
 def get_kaspersky_scan_engine_client_responding_with(
     *, faker: faker.Faker, status_code: int, json: object
 ) -> KasperskyScanEngineClient:
@@ -223,6 +250,35 @@ class TestFileValidator:
         with pytest.raises(KasperskyScanEngineConnectionStatusError) as exc_info:
             await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
         assert isinstance(exc_info.value.__cause__, transport_error)
+
+    @pytest.mark.parametrize("failure", [httpx2.ConnectError, httpx2.ReadTimeout, status_codes.SERVICE_UNAVAILABLE])
+    async def test_antivirus_retries_transient_failures(
+        self, faker: faker.Faker, png_file: bytes, failure: ScanEngineOutcome
+    ) -> None:
+        kasper, requests = get_kaspersky_scan_engine_client_with_outcomes(
+            faker=faker, outcomes=[failure, failure, status_codes.OK], max_retries=2
+        )
+        await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
+        assert len(requests) == 3  # noqa: PLR2004
+
+    @pytest.mark.parametrize("max_retries", [0, 3])
+    async def test_antivirus_gives_up_after_max_retries(
+        self, faker: faker.Faker, png_file: bytes, max_retries: int
+    ) -> None:
+        kasper, requests = get_kaspersky_scan_engine_client_with_outcomes(
+            faker=faker, outcomes=[status_codes.SERVICE_UNAVAILABLE] * (max_retries + 1), max_retries=max_retries
+        )
+        with pytest.raises(KasperskyScanEngineConnectionStatusError):
+            await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
+        assert len(requests) == max_retries + 1
+
+    async def test_antivirus_does_not_retry_client_errors(self, faker: faker.Faker, png_file: bytes) -> None:
+        kasper, requests = get_kaspersky_scan_engine_client_with_outcomes(
+            faker=faker, outcomes=[status_codes.BAD_REQUEST], max_retries=3
+        )
+        with pytest.raises(KasperskyScanEngineConnectionStatusError):
+            await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
+        assert len(requests) == 1
 
     @pytest.mark.parametrize("image_conversion_format", list(ImageConversionFormat))
     async def test_excluded_conversion_formats(
