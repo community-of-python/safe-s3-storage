@@ -1,37 +1,149 @@
 # safe-s3-storage
 
-S3 tools for uploading files to S3 safely (antivirus check, etc.) as well as downloading and deleting files.
+Validates files before they reach S3 and manages them once they are there. Validation checks the file type and size, converts images to WebP or JPEG, and can scan files with Kaspersky Scan Engine. Stored files can be read, streamed, linked to with presigned URLs and deleted.
 
-## How To Use
+## Installation
 
-```
+With uv:
+
+```bash
 uv add safe-s3-storage
+```
+
+With Poetry:
+
+```bash
 poetry add safe-s3-storage
 ```
 
-## Retries on S3 errors
+File type detection uses [python-magic](https://github.com/ahupp/python-magic), which needs the `libmagic` system library: `apt install libmagic-dev` on Debian or Ubuntu, `brew install libmagic` on macOS.
 
-safe-s3-storage doesn't provide any retries on S3 errors. You should configure in `S3Client`:
+## Quickstart
+
+Create the clients once, when your application starts, and reuse them for every upload:
 
 ```python
+import contextlib
 import typing
+import uuid
 
 import aioboto3
+import httpx2
 from aiobotocore.config import AioConfig
-from types_aiobotocore_s3 import S3Client
 
-from application.settings import settings
+from safe_s3_storage import FileValidator, KasperskyScanEngineClient, S3Service, UploadedFile
 
 
-async def create_s3_resource() -> typing.AsyncIterator[S3Client]:
-    s3_session: typing.Final = aioboto3.Session(
-        aws_access_key_id=settings.s3_access_key_id,
-        aws_secret_access_key=settings.s3_secret_access_key.get_secret_value(),
-    )
-    async with s3_session.client(
-        "s3",
-        endpoint_url=str(settings.s3_endpoint_url),
-        config=AioConfig(retries={"max_attempts": 3, "mode": "standard"}),
-    ) as s3_client:
-        yield s3_client
+@contextlib.asynccontextmanager
+async def create_storage() -> typing.AsyncIterator[tuple[FileValidator, S3Service]]:
+    async with (
+        httpx2.AsyncClient(timeout=15.0) as httpx_client,
+        aioboto3.Session().client(
+            "s3",
+            endpoint_url="http://localhost:9000",
+            config=AioConfig(retries={"max_attempts": 3, "mode": "standard"}),
+        ) as s3_client,
+    ):
+        file_validator: typing.Final = FileValidator(
+            allowed_mime_types=["image/png", "image/jpeg", "application/pdf"],
+            kaspersky_scan_engine=KasperskyScanEngineClient(
+                httpx_client=httpx_client,
+                service_url="http://kaspersky-scan-engine/api/v3.1/scanmemory",
+                client_name="my-service",
+                timeout_ms=10_000,
+            ),
+        )
+        yield file_validator, S3Service(s3_client=s3_client)
+
+
+async def upload_file(
+    file_validator: FileValidator, s3_service: S3Service, *, file_name: str, file_content: bytes
+) -> UploadedFile:
+    validated_file: typing.Final = await file_validator.validate_file(file_name=file_name, file_content=file_content)
+    return await s3_service.upload_file(validated_file, bucket_name="uploads", object_key=str(uuid.uuid4()))
 ```
+
+The object key is generated so that uploads never overwrite each other and users don't choose S3 keys. Store `uploaded_file.s3_path` and `uploaded_file.file_name` to find and name the file later.
+
+`aioboto3.Session()` reads credentials from the usual AWS sources, such as environment variables. Pass `aws_access_key_id` and `aws_secret_access_key` to it to set them explicitly.
+
+### Kaspersky Scan Engine
+
+`kaspersky_scan_engine` is optional; without it, files are not scanned. `KasperskyScanEngineClient` needs an [`httpx2`](https://github.com/pydantic/httpx2) `AsyncClient`.
+
+Use the `/api/v3.1/scanmemory` endpoint. The v3.0 endpoint ignores the `name` field and can return scan results this library doesn't recognize.
+
+`timeout_ms` is the scan timeout sent to Scan Engine. The HTTP client has its own timeout, 5 seconds by default in httpx2, so set it above `timeout_ms` as in the example. Otherwise slow scans fail on the client side first.
+
+### Retries
+
+safe-s3-storage doesn't retry anything itself. Configure S3 retries on the S3 client with `AioConfig`, as in the example.
+
+## Validation
+
+`FileValidator.validate_file` runs these steps in order:
+
+1. Detects the MIME type from the file content and checks it against `allowed_mime_types`. With `None`, every type is allowed.
+2. Checks the size of the original file against `max_image_size_bytes` for images and `max_file_size_bytes` for everything else.
+3. Converts every `image/*` file to `image_conversion_format` and changes its extension to match, unless the file's extension is in `excluded_conversion_formats`.
+4. Scans the converted file with Kaspersky Scan Engine, if configured. Images are skipped when `scan_images_with_antivirus` is `False`.
+
+| Option | Default |
+|---|---|
+| `allowed_mime_types` | `None` (any type) |
+| `max_file_size_bytes` | 10 MiB |
+| `max_image_size_bytes` | 50 MiB |
+| `image_conversion_format` | `ImageConversionFormat.webp` |
+| `image_quality` | 85 |
+| `excluded_conversion_formats` | `None`; list extensions without the dot, such as `["gif"]` |
+| `kaspersky_scan_engine` | `None` (no scanning) |
+| `scan_images_with_antivirus` | `True` |
+
+## Reading and linking to files
+
+The other `S3Service` methods take the `s3_path` from `UploadedFile`, in `bucket/key` form:
+
+```python
+import datetime
+import typing
+
+from safe_s3_storage import S3Service, UploadedFile
+
+
+async def create_download_url(s3_service: S3Service, uploaded_file: UploadedFile) -> str:
+    return await s3_service.create_file_url(
+        s3_path=uploaded_file.s3_path,
+        display_file_name=uploaded_file.file_name,
+        expires_in=datetime.timedelta(hours=1),
+    )
+
+
+async def read_and_delete(s3_service: S3Service, uploaded_file: UploadedFile) -> bytes:
+    file_content: typing.Final = await s3_service.read_file(s3_path=uploaded_file.s3_path)
+    await s3_service.delete_file(s3_path=uploaded_file.s3_path)
+    return file_content
+```
+
+`stream_file` yields the file in chunks, and `collect_file_head` returns its S3 metadata.
+
+When S3 sits behind a proxy, pass `proxy_base_url` to `create_file_url`. The S3 endpoint at the start of the presigned URL is replaced with it.
+
+## Errors
+
+The library raises these errors, all subclasses of `safe_s3_storage.exceptions.BaseError`:
+
+| Error | Raised when |
+|---|---|
+| `NotAllowedMimeTypeError` | The detected MIME type is not in `allowed_mime_types`. |
+| `TooLargeFileError` | The file exceeds `max_file_size_bytes`, or `max_image_size_bytes` for images. |
+| `FailedToConvertImageError` | The image can't be decoded or converted, for example because it is truncated. |
+| `KasperskyScanEngineThreatDetectedError` | Kaspersky Scan Engine reports a threat. |
+| `KasperskyScanEngineConnectionStatusError` | Kaspersky Scan Engine responds with a non-2xx status. |
+| `InvalidS3PathError` | An `s3_path` is not in `bucket/key` form. |
+| `FailedToReplaceS3BaseUrlWithProxyBaseUrlError` | `create_file_url` can't find the S3 endpoint in the presigned URL to replace it with `proxy_base_url`. |
+
+Other failures reach you unwrapped:
+
+- `httpx2.TransportError` when Kaspersky Scan Engine can't be reached or times out.
+- `pydantic.ValidationError` when Kaspersky Scan Engine returns a response body the library doesn't recognize.
+- botocore's `ClientError` and `BotoCoreError` for S3 failures.
