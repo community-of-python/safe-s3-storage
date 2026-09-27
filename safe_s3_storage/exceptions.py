@@ -18,6 +18,12 @@ class KasperskyScanEngineConnectionStatusError(BaseError): ...
 
 
 @dataclasses.dataclass
+class KasperskyScanEngineInvalidResponseError(BaseError):
+    response: bytes
+    file_name: str
+
+
+@dataclasses.dataclass
 class NotAllowedMimeTypeError(BaseError):
     file_name: str
     mime_type: str

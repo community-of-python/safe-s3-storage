@@ -6,7 +6,11 @@ import typing
 import httpx2
 import pydantic
 
-from safe_s3_storage.exceptions import KasperskyScanEngineConnectionStatusError, KasperskyScanEngineThreatDetectedError
+from safe_s3_storage.exceptions import (
+    KasperskyScanEngineConnectionStatusError,
+    KasperskyScanEngineInvalidResponseError,
+    KasperskyScanEngineThreatDetectedError,
+)
 
 
 class KasperskyScanEngineRequest(pydantic.BaseModel):
@@ -27,6 +31,11 @@ class KasperskyScanEngineScanResult(str, enum.Enum):
 
 class KasperskyScanEngineResponse(pydantic.BaseModel):
     scanResult: KasperskyScanEngineScanResult  # noqa: N815
+
+    @pydantic.field_validator("scanResult", mode="before")
+    @classmethod
+    def _strip_v3_0_reason(cls, scan_result: object) -> object:
+        return scan_result.split(" (", 1)[0] if isinstance(scan_result, str) else scan_result
 
 
 @dataclasses.dataclass(kw_only=True, slots=True, frozen=True)
@@ -50,6 +59,9 @@ class KasperskyScanEngineClient:
             response: typing.Final = await self._send_scan_memory_request(payload)
         except (httpx2.HTTPStatusError, httpx2.TransportError) as exc:
             raise KasperskyScanEngineConnectionStatusError from exc
-        validated_response: typing.Final = KasperskyScanEngineResponse.model_validate_json(response)
+        try:
+            validated_response: typing.Final = KasperskyScanEngineResponse.model_validate_json(response)
+        except pydantic.ValidationError as exc:
+            raise KasperskyScanEngineInvalidResponseError(response=response, file_name=file_name) from exc
         if validated_response.scanResult == KasperskyScanEngineScanResult.DETECT:
             raise KasperskyScanEngineThreatDetectedError(response=response, file_name=file_name)
