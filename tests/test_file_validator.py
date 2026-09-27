@@ -36,10 +36,10 @@ def png_file() -> bytes:
         b"\x00"  # filter method
         b"\x00"  # interlace method
         b"\x1f\x15\xc4\x89"  # CRC for IHDR
-        b"\x00\x00\x00\x0a"  # IDAT chunk length
+        b"\x00\x00\x00\x0b"  # IDAT chunk length
         b"IDAT"  # IDAT chunk type
-        b"\x78\x9c\x63\x60\x00\x00\x00\x02\x00\x01"  # compressed image data (deflate)
-        b"\x5d\xc6\x2d\xb4"  # CRC for IDAT
+        b"\x78\xda\x63\x60\x00\x02\x00\x00\x05\x00\x01"  # compressed image data (deflate)
+        b"\xe9\xfa\xdc\xd8"  # CRC for IDAT
         b"\x00\x00\x00\x00"  # IEND chunk length
         b"IEND"  # IEND chunk type
         b"\xae\x42\x60\x82"  # CRC for IEND
