@@ -47,9 +47,18 @@ class KasperskyScanEngineClient:
     max_retries: int = 3
 
     async def _send_scan_memory_request(self, payload: dict[str, typing.Any]) -> bytes:
-        response: typing.Final = await self.httpx_client.post(url=self.service_url, json=payload)
-        response.raise_for_status()
-        return response.content
+        retries_left = self.max_retries
+        while True:
+            try:
+                response = await self.httpx_client.post(url=self.service_url, json=payload)
+                response.raise_for_status()
+            except (httpx2.HTTPStatusError, httpx2.TransportError) as exc:  # noqa: PERF203
+                is_retryable = isinstance(exc, httpx2.TransportError) or exc.response.is_server_error
+                if not is_retryable or retries_left <= 0:
+                    raise
+                retries_left -= 1
+            else:
+                return response.content
 
     async def scan_memory(self, *, file_name: str, file_content: bytes) -> None:
         payload: typing.Final = KasperskyScanEngineRequest(

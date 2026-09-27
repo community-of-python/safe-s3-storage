@@ -77,7 +77,11 @@ Use the `/api/v3.1/scanmemory` endpoint. The v3.0 endpoint also works, but it ig
 
 ### Retries
 
-safe-s3-storage doesn't retry anything itself. Configure S3 retries on the S3 client with `AioConfig`, as in the example.
+`KasperskyScanEngineClient` retries a scan up to `max_retries` times (3 by default) when Scan Engine can't be reached, times out or responds with a 5xx status. It retries immediately, without a delay. 4xx responses and scan results, including detected threats, are never retried. Set `max_retries=0` to turn retries off.
+
+With retries, one scan can take up to `max_retries + 1` times the HTTP client timeout before `KasperskyScanEngineConnectionStatusError` is raised.
+
+safe-s3-storage doesn't retry S3 requests. Configure S3 retries on the S3 client with `AioConfig`, as in the example.
 
 ## Validation
 
@@ -139,7 +143,7 @@ The library raises these errors, all subclasses of `safe_s3_storage.exceptions.B
 | `FailedToConvertImageError` | The image can't be decoded or converted, for example because it is truncated. |
 | `KasperskyScanEngineThreatDetectedError` | Kaspersky Scan Engine reports a threat. |
 | `KasperskyScanEngineInvalidResponseError` | Kaspersky Scan Engine returns a response body the library doesn't recognize. The pydantic error is chained as `__cause__`. |
-| `KasperskyScanEngineConnectionStatusError` | Kaspersky Scan Engine can't be reached, times out or responds with a non-2xx status. The httpx2 error is chained as `__cause__`. |
+| `KasperskyScanEngineConnectionStatusError` | Kaspersky Scan Engine can't be reached, times out or responds with a non-2xx status, after any retries. The httpx2 error is chained as `__cause__`. |
 | `InvalidS3PathError` | An `s3_path` is not in `bucket/key` form. |
 | `FailedToReplaceS3BaseUrlWithProxyBaseUrlError` | `create_file_url` can't find the S3 endpoint in the presigned URL to replace it with `proxy_base_url`. |
 
