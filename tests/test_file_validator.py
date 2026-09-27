@@ -3,6 +3,7 @@ import typing
 
 import faker
 import httpx2
+import pydantic
 import pytest
 import pyvips  # type: ignore[import-untyped]
 from httpx2 import codes as status_codes
@@ -191,6 +192,21 @@ class TestFileValidator:
         )
         with pytest.raises(KasperskyScanEngineConnectionStatusError):
             await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
+
+    async def test_antivirus_accepts_v3_0_non_scanned_reason(self, faker: faker.Faker, png_file: bytes) -> None:
+        kasper: typing.Final = get_kaspersky_scan_engine_client_responding_with(
+            faker=faker, status_code=status_codes.OK, json={"scanResult": "NON_SCANNED (PASSWORD PROTECTED)"}
+        )
+        await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
+
+    @pytest.mark.parametrize("response_json", [{"scanResult": "UNKNOWN"}, {}, ""])
+    async def test_antivirus_invalid_response(self, faker: faker.Faker, png_file: bytes, response_json: object) -> None:
+        kasper: typing.Final = get_kaspersky_scan_engine_client_responding_with(
+            faker=faker, status_code=status_codes.OK, json=response_json
+        )
+        with pytest.raises(exceptions.KasperskyScanEngineInvalidResponseError) as exc_info:
+            await kasper.scan_memory(file_name=faker.file_name(), file_content=png_file)
+        assert isinstance(exc_info.value.__cause__, pydantic.ValidationError)
 
     @pytest.mark.parametrize("transport_error", [httpx2.ConnectError, httpx2.ReadTimeout])
     async def test_antivirus_transport_error(
